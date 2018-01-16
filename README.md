@@ -1,5 +1,5 @@
 # butler
-The NK scaffolding tool with an interactive prompts. Shipped with binaries for Mac, Win and Linux (64-bit).
+The NK scaffolding tool with an interactive cli. Shipped with binaries for Mac, Win and Linux (64-bit).
 
 # Installation
 
