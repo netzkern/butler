@@ -1,7 +1,8 @@
 # .goreleaser.yml
 # Build customization
+project_name: butler
 builds:
-  - binary: drum-roll
+  - binary: butler
     goos:
       - windows
       - darwin
