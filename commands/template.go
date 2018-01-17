@@ -15,14 +15,19 @@ var blacklist = map[string]bool{
 	"node_modules": true,
 }
 
-type project struct {
-	Name     string
-	Path     string
-	Template string
-}
+const (
+	startDelim = "[["
+	endDelim   = "]]"
+)
 
-// Templating command
-type Templating struct{}
+type (
+	project struct {
+		Name     string
+		Path     string
+		Template string
+	}
+	Templating struct{}
+)
 
 func (t *Templating) cloneRepo(repoURL string, dest string) error {
 	git.PlainClone(dest, false, &git.CloneOptions{
@@ -99,7 +104,7 @@ func (t *Templating) Run() error {
 
 		dat, err := ioutil.ReadFile(path)
 
-		tmpl, err := template.New(path).Delims("[[", "]]").Parse(string(dat))
+		tmpl, err := template.New(path).Delims(startDelim, endDelim).Parse(string(dat))
 
 		f, err := os.Create(path)
 
@@ -109,7 +114,13 @@ func (t *Templating) Run() error {
 			return err
 		}
 
-		err = tmpl.Execute(f, project)
+		var templateData = struct {
+			ProjectName string
+		}{
+			project.Name,
+		}
+
+		err = tmpl.Execute(f, templateData)
 
 		if err != nil {
 			return err
