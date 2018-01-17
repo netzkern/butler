@@ -11,8 +11,6 @@ builds:
       - amd64
 archive:
  files:
-    - LICENSE.txt
+    - LICENSE
     - README.md
-    - CHANGELOG.md
-    - docs/*
     - butler.yml
