@@ -4,7 +4,7 @@ Shipped with binaries for Mac, Win and Linux (64-bit).
 
 # Usage
 
-[Download here](releases)
+[Download here](https://github.com/netzkern/butler/releases)
 
 ```sh
 $ butler
