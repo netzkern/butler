@@ -1,5 +1,5 @@
 
-![butler](butler.png)
+![butler](logo.png)
 
 Welcome to Butler, your personal assistent to scaffolding your projects.
 Shipped with binaries for Mac, Win and Linux (64-bit).
