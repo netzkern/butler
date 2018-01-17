@@ -11,13 +11,16 @@ import (
 	git "gopkg.in/src-d/go-git.v4"
 )
 
-var blacklist = map[string]bool{
-	"node_modules": true,
-}
-
 const (
 	startDelim = "[["
 	endDelim   = "]]"
+)
+
+var (
+	allowedExtensions = [...]string{".md", ".txt", ".html", ".htm", ".rtf", ".json", ".yml", ".csproj"}
+	blacklistDirs     = map[string]bool{
+		"node_modules": true,
+	}
 )
 
 type (
@@ -94,11 +97,32 @@ func (t *Templating) Run() error {
 			return err
 		}
 
-		if strings.HasPrefix(info.Name(), ".") || blacklist[info.Name()] {
+		// skip blacklisted directories
+		if info.IsDir() && blacklistDirs[info.Name()] {
 			return filepath.SkipDir
 		}
 
+		// ignore hidden dirs
+		if strings.HasPrefix(info.Name(), ".") {
+			return filepath.SkipDir
+		}
+
+		// skip directories but go ahead with traversing
 		if info.IsDir() {
+			return nil
+		}
+
+		// check for valid file extension
+		fileExt := strings.ToLower(info.Name())
+		validExt := false
+		for _, ext := range allowedExtensions {
+			if strings.HasSuffix(fileExt, ext) {
+				validExt = true
+				break
+			}
+		}
+
+		if !validExt {
 			return nil
 		}
 
