@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -133,6 +134,13 @@ func (t *Templating) Run() error {
 		f, err := os.Create(path)
 
 		defer f.Close()
+
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("butler: File %s recovered due to invalid template! Error: %s \n", path, r)
+				ioutil.WriteFile(path, dat, 0644)
+			}
+		}()
 
 		if err != nil {
 			return err

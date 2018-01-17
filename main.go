@@ -46,13 +46,13 @@ func main() {
 		command := commands.Templating{}
 		err := command.Run()
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println("butler: " + err.Error())
 		}
 	case "Jira":
-		fmt.Println("Jira command not implemented!")
+		fmt.Println("butler: Jira command not implemented!")
 	case "Tfs":
-		fmt.Println("Tfs command not implemented!")
+		fmt.Println("butler: Tfs command not implemented!")
 	default:
-		fmt.Printf("Command %s not implemented!", taskType)
+		fmt.Printf("butler: Command %s not implemented!", taskType)
 	}
 }
