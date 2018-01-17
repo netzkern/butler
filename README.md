@@ -15,7 +15,7 @@ $ butler
 
 # Development
 
-## Installtion
+## Installation
 ```
 $ go get ./..
 ```
