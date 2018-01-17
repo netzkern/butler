@@ -12,7 +12,7 @@ $ butler
 
 # Commands
 
-- Templating: Checkout a git project template and substituted placeholders.
+- Templating: Checkout a git project template and substituted placeholders. All template options are managed in the `butler.yml` file. Butler is shipped with a default config. If you want to create project template look [here](https://golang.org/pkg/text/template/) to get an overview about the template language.
 
 # Development
 

@@ -7,15 +7,17 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/netzkern/butler/config"
+	"github.com/netzkern/butler/util"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
 )
 
 const (
-	startDelim = "[["
-	endDelim   = "]]"
+	startDelim = "butler{"
+	endDelim   = "}"
 )
 
 var (
@@ -31,10 +33,11 @@ var (
 )
 
 type (
-	project struct {
-		Name     string
-		Path     string
-		Template string
+	ProjectData struct {
+		Name        string
+		Path        string
+		Template    string
+		Description string
 	}
 	Templating struct {
 		Templates []config.Template
@@ -46,6 +49,10 @@ func (t *Templating) cloneRepo(repoURL string, dest string) error {
 		URL:      repoURL,
 		Progress: os.Stdout,
 	})
+
+	if err == git.ErrRepositoryAlreadyExists {
+		return fmt.Errorf("Respository already exists. Remove %s", dest)
+	}
 
 	return err
 }
@@ -70,7 +77,7 @@ func (t *Templating) getTemplateOptions() []string {
 	return tpls
 }
 
-func (t *Templating) prompts() (*project, error) {
+func (t *Templating) prompts() (*ProjectData, error) {
 	var simpleQs = []*survey.Question{
 		{
 			Name:     "Template",
@@ -78,14 +85,22 @@ func (t *Templating) prompts() (*project, error) {
 			Prompt: &survey.Select{
 				Message: "What system are you using?",
 				Options: t.getTemplateOptions(),
+				Help:    "You can add additional templates in your config",
 			},
 		},
 		{
 			Name: "Name",
 			Prompt: &survey.Input{
 				Message: "What is the project name?",
+				Help:    "Allowed character 0-9, A-Z, _-",
 			},
 			Validate: survey.Required,
+		},
+		{
+			Name: "Description",
+			Prompt: &survey.Input{
+				Message: "What is the project description?",
+			},
 		},
 		{
 			Name:     "Path",
@@ -93,11 +108,12 @@ func (t *Templating) prompts() (*project, error) {
 			Prompt: &survey.Input{
 				Message: "What is the destination?",
 				Default: "./src",
+				Help:    "The place of your new project",
 			},
 		},
 	}
 
-	var project = &project{}
+	var project = &ProjectData{}
 
 	// ask the question
 	err := survey.Ask(simpleQs, project)
@@ -105,6 +121,8 @@ func (t *Templating) prompts() (*project, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	project.Name = util.NormalizeProjectName(project.Name)
 
 	return project, nil
 }
@@ -172,7 +190,7 @@ func (t *Templating) Run() error {
 
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Printf("butler: File %s recovered due to invalid template! Error: %s \n", path, r)
+				fmt.Printf("butler: File %s was recovered due to template error! Error: %s \n", path, r)
 				ioutil.WriteFile(path, dat, 0644)
 			}
 		}()
@@ -182,9 +200,13 @@ func (t *Templating) Run() error {
 		}
 
 		var templateData = struct {
-			ProjectName string
+			Project *ProjectData
+			Date    string
+			Year    int
 		}{
-			project.Name,
+			project,
+			time.Now().Format(time.RFC3339),
+			time.Now().Year(),
 		}
 
 		err = tmpl.Execute(f, templateData)
