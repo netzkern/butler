@@ -16,7 +16,7 @@ var (
 			Validate: survey.Required,
 			Prompt: &survey.Select{
 				Message: "How can I help you, Sir?",
-				Options: []string{"Templating", "Jira", "Tfs"},
+				Options: []string{"Project Templates"},
 			},
 		},
 	}
@@ -46,7 +46,7 @@ func main() {
 	}
 
 	switch taskType := answers.Action; taskType {
-	case "Templating":
+	case "Project Templates":
 		command := commands.Templating{Templates: cfg.Templates, Variables: cfg.Variables}
 		err := command.Run()
 		if err != nil {

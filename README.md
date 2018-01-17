@@ -1,4 +1,6 @@
-# butler
+
+![butler](butler.png)
+
 Welcome to Butler, your personal assistent to scaffolding your projects.
 Shipped with binaries for Mac, Win and Linux (64-bit).
 
@@ -10,13 +12,11 @@ Shipped with binaries for Mac, Win and Linux (64-bit).
 $ butler
 ```
 
-![butler](butler.png)
-
 # Commands
 
-## Templating
+## Project Templates
 
-Clone a git project template and substituted placeholders. All available templates are managed in the `butler.yml` file. Butler is shipped with a default config. If you want to create a project template look [here](https://golang.org/pkg/text/template/) to get an overview about the template language. We use a different delimiter to avoid collsion with existing.
+This command will create a new project template. All available project templates are managed in the `butler.yml` file. Butler is shipped with a default config. If you want to create a project template look [here](https://golang.org/pkg/text/template/) for the template features. We use a unique delimiter to avoid collsion with existing template engines.
 
 ### Delimiter
 
@@ -26,10 +26,12 @@ butler{ .Project.Name }
 
 ### Available variables:
 
-- Project.Name: Project name
-- Project.Description: Project description
-- Date: Current Date (RFC3339)
-- Year: Current year
+- `Project.Name`: Project name
+- `Project.Description`: Project description
+- `Date`: Current Date (RFC3339)
+- `Year`: Current year
+
+You can specify custom variables in the `butler.yml` file. They can be accessed e.g `butler{ .Vars.company }`
 
 # Development
 
