@@ -13,6 +13,8 @@ $ go get ./..
 $ butler
 ```
 
+![butler](butler.png)
+
 # Commands
 
 - Templating: Checkout a git project template and substituted placeholders.

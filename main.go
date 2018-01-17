@@ -14,7 +14,7 @@ var qs = []*survey.Question{
 		Name:     "action",
 		Validate: survey.Required,
 		Prompt: &survey.Select{
-			Message: "What do you want?",
+			Message: "How can I help you, Sir?",
 			Options: []string{"Templating", "Jira", "Tfs"},
 		},
 	},
