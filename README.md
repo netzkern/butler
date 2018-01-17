@@ -13,8 +13,6 @@ $ butler
 # Commands
 
 - Templating: Checkout a git project template and substituted placeholders.
-- Jira: Create a Project (REST Api).
-- Tfs: Create a Project (REST Api).
 
 # Development
 
@@ -28,4 +26,11 @@ $ go get ./..
 ```
 $ go get github.com/goreleaser/goreleaser
 $ goreleaser
+```
+
+## Publish
+
+```
+$ git tag -a v0.1.0 -m "First release"
+$ git push origin v0.1.0
 ```
