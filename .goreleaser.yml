@@ -9,3 +9,10 @@ builds:
       - linux
     goarch:
       - amd64
+archive:
+ files:
+    - LICENSE.txt
+    - README.md
+    - CHANGELOG.md
+    - docs/*
+    - butler.yml
