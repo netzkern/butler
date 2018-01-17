@@ -1,11 +1,6 @@
 # butler
-The NK scaffolding tool with an interactive cli. Shipped with binaries for Mac, Win and Linux (64-bit).
-
-# Installation
-
-```
-$ go get ./..
-```
+Welcome to Butler, your personal assistent to scaffolding your projects.
+Shipped with binaries for Mac, Win and Linux (64-bit).
 
 # Usage
 
@@ -21,7 +16,14 @@ $ butler
 - Jira: Create a Project (REST Api).
 - Tfs: Create a Project (REST Api).
 
-# Build Binaries
+# Development
+
+## Installation
+```
+$ go get ./..
+```
+
+## Build Binaries
 
 ```
 $ go get github.com/goreleaser/goreleaser
