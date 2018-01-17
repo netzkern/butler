@@ -41,6 +41,7 @@ type (
 	}
 	Templating struct {
 		Templates []config.Template
+		Variables map[string]string
 	}
 )
 
@@ -203,10 +204,12 @@ func (t *Templating) Run() error {
 			Project *ProjectData
 			Date    string
 			Year    int
+			Vars    map[string]string
 		}{
 			project,
 			time.Now().Format(time.RFC3339),
 			time.Now().Year(),
+			t.Variables,
 		}
 
 		err = tmpl.Execute(f, templateData)

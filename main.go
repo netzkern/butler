@@ -47,15 +47,11 @@ func main() {
 
 	switch taskType := answers.Action; taskType {
 	case "Templating":
-		command := commands.Templating{Templates: cfg.Templates}
+		command := commands.Templating{Templates: cfg.Templates, Variables: cfg.Variables}
 		err := command.Run()
 		if err != nil {
 			fmt.Println("butler: " + err.Error())
 		}
-	case "Jira":
-		fmt.Println("butler: Jira command not implemented!")
-	case "Tfs":
-		fmt.Println("butler: Tfs command not implemented!")
 	default:
 		fmt.Printf("butler: Command %s not implemented!", taskType)
 	}

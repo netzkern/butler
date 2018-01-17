@@ -3,3 +3,7 @@ templates:
     url: https://github.com/netzkern/example-project-template.git
   - name: Kentico 8
     url: https://github.com/netzkern/example-project-template.git
+
+variables:
+  company: netzkern
+  email: info@netzkern.de

@@ -14,7 +14,8 @@ type Template struct {
 }
 
 type Config struct {
-	Templates []Template `json:"templates"`
+	Templates []Template        `json:"templates"`
+	Variables map[string]string `json:"variables"`
 }
 
 func ParseConfig() *Config {

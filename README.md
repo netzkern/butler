@@ -12,7 +12,22 @@ $ butler
 
 # Commands
 
-- Templating: Checkout a git project template and substituted placeholders. All template options are managed in the `butler.yml` file. Butler is shipped with a default config. If you want to create project template look [here](https://golang.org/pkg/text/template/) to get an overview about the template language.
+## Templating
+
+Clone a git project template and substituted placeholders. All available templates are managed in the `butler.yml` file. Butler is shipped with a default config. If you want to create a project template look [here](https://golang.org/pkg/text/template/) to get an overview about the template language. We use a different delimiter to avoid collsion with existing.
+
+### Delimiter
+
+```
+butler{ .Project.Name }
+```
+
+### Available variables:
+
+- Project.Name: Project name
+- Project.Description: Project description
+- Date: Current Date (RFC3339)
+- Year: Current year
 
 # Development
 
