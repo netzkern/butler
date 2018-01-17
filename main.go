@@ -4,21 +4,23 @@ import (
 	"fmt"
 
 	"github.com/netzkern/butler/commands"
+	"github.com/netzkern/butler/config"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
-var version = "master"
-
-var qs = []*survey.Question{
-	{
-		Name:     "action",
-		Validate: survey.Required,
-		Prompt: &survey.Select{
-			Message: "How can I help you, Sir?",
-			Options: []string{"Templating", "Jira", "Tfs"},
+var (
+	version = "master"
+	qs      = []*survey.Question{
+		{
+			Name:     "action",
+			Validate: survey.Required,
+			Prompt: &survey.Select{
+				Message: "How can I help you, Sir?",
+				Options: []string{"Templating", "Jira", "Tfs"},
+			},
 		},
-	},
-}
+	}
+)
 
 func main() {
 	fmt.Println("  ____        _   _           ")
@@ -30,6 +32,8 @@ func main() {
 	fmt.Println("                              ")
 	fmt.Println("Welcome to Butler, your personal assistent to scaffolding your projects.")
 	fmt.Println("Version: ", version)
+
+	cfg := config.ParseConfig()
 
 	answers := struct {
 		Action string
@@ -43,7 +47,7 @@ func main() {
 
 	switch taskType := answers.Action; taskType {
 	case "Templating":
-		command := commands.Templating{}
+		command := commands.Templating{Templates: cfg.Templates}
 		err := command.Run()
 		if err != nil {
 			fmt.Println("butler: " + err.Error())

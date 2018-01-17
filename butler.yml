@@ -1,0 +1,5 @@
+templates:
+  - name: Sitecore 9
+    url: https://github.com/netzkern/example-project-template.git
+  - name: Kentico 8
+    url: https://github.com/netzkern/example-project-template.git

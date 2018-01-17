@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/netzkern/butler/config"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
 )
@@ -35,16 +36,38 @@ type (
 		Path     string
 		Template string
 	}
-	Templating struct{}
+	Templating struct {
+		Templates []config.Template
+	}
 )
 
 func (t *Templating) cloneRepo(repoURL string, dest string) error {
-	git.PlainClone(dest, false, &git.CloneOptions{
+	_, err := git.PlainClone(dest, false, &git.CloneOptions{
 		URL:      repoURL,
 		Progress: os.Stdout,
 	})
 
+	return err
+}
+
+func (t *Templating) getTemplateByName(name string) *config.Template {
+	for _, tpl := range t.Templates {
+		if tpl.Name == name {
+			return &tpl
+		}
+	}
+
 	return nil
+}
+
+func (t *Templating) getTemplateOptions() []string {
+	tpls := make([]string, 0)
+
+	for _, tpl := range t.Templates {
+		tpls = append(tpls, tpl.Name)
+	}
+
+	return tpls
 }
 
 func (t *Templating) prompts() (*project, error) {
@@ -54,7 +77,7 @@ func (t *Templating) prompts() (*project, error) {
 			Validate: survey.Required,
 			Prompt: &survey.Select{
 				Message: "What system are you using?",
-				Options: []string{"Sitecore", "Kentico"},
+				Options: t.getTemplateOptions(),
 			},
 		},
 		{
@@ -94,8 +117,15 @@ func (t *Templating) Run() error {
 		return err
 	}
 
-	if project.Template == "Sitecore" {
-		t.cloneRepo("https://github.com/netzkern/example-project-template.git", project.Path)
+	tpl := t.getTemplateByName(project.Template)
+
+	if tpl != nil {
+		err := t.cloneRepo(tpl.Url, project.Path)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("butler: template %s could not be found", project.Template)
 	}
 
 	walkErr := filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
