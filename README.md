@@ -4,6 +4,8 @@ Shipped with binaries for Mac, Win and Linux (64-bit).
 
 # Usage
 
+[Download here](releases)
+
 ```sh
 $ butler
 ```
