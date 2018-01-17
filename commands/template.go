@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -69,11 +70,13 @@ func (t *Templating) getTemplateByName(name string) *config.Template {
 }
 
 func (t *Templating) getTemplateOptions() []string {
-	tpls := make([]string, 0)
+	tpls := []string{}
 
 	for _, tpl := range t.Templates {
 		tpls = append(tpls, tpl.Name)
 	}
+
+	sort.Strings(tpls)
 
 	return tpls
 }
