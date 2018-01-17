@@ -1,5 +1,5 @@
 <p align="center">
-<a href="/netzkern/butler/blob/master/logo.png" target="_blank"><img src="/netzkern/butler/raw/master/logo.png" alt="butler" style="max-width:100%;"></a>
+<img src="https://github.com/netzkern/butler/blob/master/logo.png?raw=true" alt="butler" style="max-width:100%;">
 </p>
 
 Welcome to Butler, your personal assistent to scaffolding your projects.
