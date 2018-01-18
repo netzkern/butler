@@ -147,6 +147,8 @@ func (t *Templating) Run() error {
 
 	if tpl != nil {
 		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+		s.Suffix = " Clone repository..."
+		s.FinalMSG = "Complete!\n"
 		s.Start()
 		err := t.cloneRepo(tpl.Url, project.Path)
 		s.Stop()
@@ -156,6 +158,11 @@ func (t *Templating) Run() error {
 	} else {
 		return fmt.Errorf("template %s could not be found", project.Template)
 	}
+
+	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	s.Suffix = " proceed templates..."
+	s.FinalMSG = "Complete!\n"
+	s.Start()
 
 	walkErr := filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -239,6 +246,8 @@ func (t *Templating) Run() error {
 
 		return nil
 	})
+
+	s.Stop()
 
 	if walkErr != nil {
 		return walkErr
