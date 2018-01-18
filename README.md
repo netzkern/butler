@@ -32,7 +32,11 @@ butler{ .Project.Name }
 - `Date`: Current Date (RFC3339)
 - `Year`: Current year
 
-You can specify custom variables in the `butler.yml` file. They can be accessed e.g `butler{ .Vars.company }`
+You can specify custom variables in the `butler.yml` file. They can be accessed e.g `butler{ .Vars.company }`.
+
+#### Demo Template
+
+[example-project-template](https://github.com/netzkern/example-project-template)
 
 # Development
 

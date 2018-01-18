@@ -57,7 +57,7 @@ func (t *Templating) cloneRepo(repoURL string, dest string) error {
 	})
 
 	if err == git.ErrRepositoryAlreadyExists {
-		return fmt.Errorf("Respository already exists. Remove %s", dest)
+		return fmt.Errorf("respository already exists. Remove %s", dest)
 	}
 
 	return err
@@ -154,7 +154,7 @@ func (t *Templating) Run() error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("butler: template %s could not be found", project.Template)
+		return fmt.Errorf("template %s could not be found", project.Template)
 	}
 
 	walkErr := filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
@@ -222,7 +222,7 @@ func (t *Templating) Run() error {
 
 		defer func() {
 			if r := recover(); r != nil {
-				t.Logger.Tracef("butler: File %s was recovered due to template error! Error: %s \n", path, r)
+				t.Logger.Tracef("file %s was recovered due to template error! Error: %s \n", path, r)
 				ioutil.WriteFile(path, dat, 0644)
 			}
 		}()
