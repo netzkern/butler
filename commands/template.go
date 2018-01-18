@@ -147,7 +147,7 @@ func (t *Templating) Run() error {
 
 	if tpl != nil {
 		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-		s.Suffix = " Clone repository..."
+		s.Suffix = " Cloning repository..."
 		s.FinalMSG = "Complete!\n"
 		s.Start()
 		err := t.cloneRepo(tpl.Url, project.Path)
@@ -160,7 +160,7 @@ func (t *Templating) Run() error {
 	}
 
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Suffix = " proceed templates..."
+	s.Suffix = " processing templates..."
 	s.FinalMSG = "Complete!\n"
 	s.Start()
 
