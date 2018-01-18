@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/netzkern/butler/config"
 	"github.com/netzkern/butler/util"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -142,7 +143,10 @@ func (t *Templating) Run() error {
 	tpl := t.getTemplateByName(project.Template)
 
 	if tpl != nil {
+		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+		s.Start()
 		err := t.cloneRepo(tpl.Url, project.Path)
+		s.Stop()
 		if err != nil {
 			return err
 		}
