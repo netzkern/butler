@@ -14,6 +14,11 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
+const (
+	debug = false
+	trace = false
+)
+
 var (
 	log     *logger.Logger
 	cfg     *config.Config
@@ -36,9 +41,9 @@ func init() {
 
 	cfg = config.ParseConfig()
 	if cfg.Logger == "file" {
-		log = logger.NewFileLogger("butler.log", true, false, false, true)
+		log = logger.NewFileLogger("butler.log", debug, trace, false, true)
 	} else {
-		log = logger.NewStdLogger(true, true, false, false, true)
+		log = logger.NewStdLogger(true, debug, trace, false, true)
 	}
 }
 

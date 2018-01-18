@@ -197,6 +197,8 @@ func (t *Templating) Run() error {
 			return nil
 		}
 
+		t.Logger.Tracef("Processing file %v", path)
+
 		var templateData = struct {
 			Project *ProjectData
 			Date    string
