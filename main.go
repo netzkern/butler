@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
+	apexLog "github.com/apex/log"
 	"github.com/netzkern/butler/commands"
 	"github.com/netzkern/butler/config"
 	"github.com/netzkern/butler/logger"
@@ -30,6 +31,9 @@ var (
 )
 
 func init() {
+	// go-update logger
+	apexLog.SetLevel(apexLog.ErrorLevel)
+
 	cfg = config.ParseConfig()
 	if cfg.Logger == "file" {
 		log = logger.NewFileLogger("butler.log", true, false, false, true)

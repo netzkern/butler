@@ -7,11 +7,9 @@ Shipped with binaries for Mac, Win and Linux (64-bit).
 
 # Usage
 
-[Download here](https://github.com/netzkern/butler/releases)
-
-```sh
-$ butler
-```
+1. [Download here](https://github.com/netzkern/butler/releases)
+2. Install in `PATH`
+3. Run `butler`
 
 # Commands
 
@@ -33,6 +31,10 @@ butler{ .Project.Name }
 - `Year`: Current year
 
 You can specify custom variables in the `butler.yml` file. They can be accessed e.g `butler{ .Vars.company }`.
+
+## Auto-Update
+
+Butler is able to update itself. The latest Github release is used.
 
 ### Demo Template
 
