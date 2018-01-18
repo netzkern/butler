@@ -34,30 +34,9 @@ butler{ .Project.Name }
 
 You can specify custom variables in the `butler.yml` file. They can be accessed e.g `butler{ .Vars.company }`.
 
-#### Demo Template
+### Demo Template
 
 [example-project-template](https://github.com/netzkern/example-project-template)
-
-# Development
-
-## Installation
-```
-$ go get ./...
-```
-
-## Build Binaries
-
-```
-$ go get github.com/goreleaser/goreleaser
-$ goreleaser
-```
-
-## Publish
-
-```
-$ git tag -a v0.1.0 -m "First release"
-$ git push origin v0.1.0
-```
 
 ### Credits
 
