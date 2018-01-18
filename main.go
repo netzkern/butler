@@ -78,8 +78,14 @@ func main() {
 }
 
 func updateApp() {
+	command := "butler"
+
+	if runtime.GOOS == "windows" {
+		command = "butler.exe"
+	}
+
 	m := &update.Manager{
-		Command: "butler",
+		Command: command,
 		Store: &github.Store{
 			Owner: "netzkern",
 			Repo:  "butler",
