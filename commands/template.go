@@ -160,7 +160,7 @@ func (t *Templating) Run() error {
 	}
 
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Suffix = " processing templates..."
+	s.Suffix = " Processing templates..."
 	s.FinalMSG = "Complete!\n"
 	s.Start()
 
