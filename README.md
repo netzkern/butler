@@ -17,7 +17,7 @@ $ butler
 
 ## Project Templates
 
-This command will create a new project template. All available project templates are managed in the `butler.yml` file. Butler is shipped with a default config. If you want to create a project template look [here](https://golang.org/pkg/text/template/) for the template features. We use a unique delimiter to avoid collsion with existing template engines.
+This command will create a new project template and replaces all variables in files and filenames. Project templates are managed in the `butler.yml` file. Butler is shipped with a default config. If you want to create a project template look [here](https://golang.org/pkg/text/template/) for the template features. We use a unique delimiter to avoid collsion with existing template engines.
 
 ### Delimiter
 
