@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -190,11 +191,32 @@ func (t *Templating) Run() error {
 			return nil
 		}
 
+		var templateData = struct {
+			Project *ProjectData
+			Date    string
+			Year    int
+			Vars    map[string]string
+		}{
+			project,
+			time.Now().Format(time.RFC3339),
+			time.Now().Year(),
+			t.Variables,
+		}
+
 		dat, err := ioutil.ReadFile(path)
 
+		var b bytes.Buffer
+
 		tmpl, err := template.New(path).Delims(startDelim, endDelim).Parse(string(dat))
+		tmplPath, err := template.New(path).Delims(startDelim, endDelim).Parse(path)
+
+		err = tmplPath.Execute(&b, templateData)
 
 		f, err := os.Create(path)
+
+		defer func() {
+			err = os.Rename(path, b.String())
+		}()
 
 		defer f.Close()
 
@@ -207,18 +229,6 @@ func (t *Templating) Run() error {
 
 		if err != nil {
 			return err
-		}
-
-		var templateData = struct {
-			Project *ProjectData
-			Date    string
-			Year    int
-			Vars    map[string]string
-		}{
-			project,
-			time.Now().Format(time.RFC3339),
-			time.Now().Year(),
-			t.Variables,
 		}
 
 		err = tmpl.Execute(f, templateData)
