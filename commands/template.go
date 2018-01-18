@@ -111,7 +111,7 @@ func (t *Templating) prompts() (*ProjectData, error) {
 			Validate: survey.Required,
 			Prompt: &survey.Input{
 				Message: "What is the destination?",
-				Default: "./src",
+				Default: "src",
 				Help:    "The place of your new project",
 			},
 		},

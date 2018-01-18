@@ -38,7 +38,7 @@ You can specify custom variables in the `butler.yml` file. They can be accessed 
 
 ## Installation
 ```
-$ go get ./..
+$ go get ./...
 ```
 
 ## Build Binaries
