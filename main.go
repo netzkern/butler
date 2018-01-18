@@ -2,14 +2,20 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/netzkern/butler/commands"
 	"github.com/netzkern/butler/config"
 	"github.com/netzkern/butler/logger"
+	update "github.com/tj/go-update"
+	"github.com/tj/go-update/progress"
+	"github.com/tj/go-update/stores/github"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
+	log     *logger.Logger
+	cfg     *config.Config
 	version = "master"
 	qs      = []*survey.Question{
 		{
@@ -17,11 +23,20 @@ var (
 			Validate: survey.Required,
 			Prompt: &survey.Select{
 				Message: "How can I help you, Sir?",
-				Options: []string{"Project Templates"},
+				Options: []string{"Project Templates", "Auto Update"},
 			},
 		},
 	}
 )
+
+func init() {
+	cfg = config.ParseConfig()
+	if cfg.Logger == "file" {
+		log = logger.NewFileLogger("butler.log", true, false, false, true)
+	} else {
+		log = logger.NewStdLogger(true, true, false, false, true)
+	}
+}
 
 func main() {
 	fmt.Println("  ____        _   _           ")
@@ -33,15 +48,6 @@ func main() {
 	fmt.Println("                              ")
 	fmt.Println("Welcome to Butler, your personal assistent to scaffolding your projects.")
 	fmt.Println("Version: ", version)
-
-	cfg := config.ParseConfig()
-	var log *logger.Logger
-
-	if cfg.Logger == "file" {
-		log = logger.NewFileLogger("butler.log", true, false, false, true)
-	} else {
-		log = logger.NewStdLogger(true, true, false, false, true)
-	}
 
 	answers := struct {
 		Action string
@@ -64,7 +70,57 @@ func main() {
 		if err != nil {
 			log.Errorf(err.Error())
 		}
+	case "Auto Update":
+		updateApp()
 	default:
 		log.Noticef("Command %s not implemented!", taskType)
 	}
+}
+
+func updateApp() {
+	m := &update.Manager{
+		Command: "butler",
+		Store: &github.Store{
+			Owner: "netzkern",
+			Repo:  "butler",
+		},
+	}
+
+	// fetch the new releases
+	releases, err := m.LatestReleases()
+	if err != nil {
+		log.Fatalf("error fetching releases: %s", err)
+	}
+
+	// no updates
+	if len(releases) == 0 {
+		log.Noticef("no updates")
+		return
+	}
+
+	// latest release
+	latest := releases[0]
+
+	// find the tarball for this system
+	a := latest.FindTarball(runtime.GOOS, runtime.GOARCH)
+	if a == nil {
+		log.Noticef("no binary for your system")
+		return
+	}
+
+	// whitespace
+	fmt.Println()
+
+	// download tarball to a tmp dir
+	tarball, err := a.DownloadProxy(progress.Reader)
+	if err != nil {
+		log.Fatalf("error downloading: %s", err)
+	}
+
+	// install it
+	if err := m.Install(tarball); err != nil {
+		log.Fatalf("error installing: %s", err)
+	}
+
+	fmt.Printf("Updated to %s\n", latest.Version)
 }
