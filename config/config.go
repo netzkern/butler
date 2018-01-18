@@ -15,6 +15,7 @@ type Template struct {
 
 type Config struct {
 	Templates []Template        `json:"templates"`
+	Logger    string            `json:"logger"`
 	Variables map[string]string `json:"variables"`
 }
 

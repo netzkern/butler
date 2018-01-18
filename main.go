@@ -5,6 +5,7 @@ import (
 
 	"github.com/netzkern/butler/commands"
 	"github.com/netzkern/butler/config"
+	"github.com/netzkern/butler/logger"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -34,6 +35,13 @@ func main() {
 	fmt.Println("Version: ", version)
 
 	cfg := config.ParseConfig()
+	var log *logger.Logger
+
+	if cfg.Logger == "file" {
+		log = logger.NewFileLogger("butler.log", true, false, false, true)
+	} else {
+		log = logger.NewStdLogger(true, true, false, false, true)
+	}
 
 	answers := struct {
 		Action string
@@ -41,18 +49,22 @@ func main() {
 
 	err := survey.Ask(qs, &answers)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Errorf(err.Error())
 		return
 	}
 
 	switch taskType := answers.Action; taskType {
 	case "Project Templates":
-		command := commands.Templating{Templates: cfg.Templates, Variables: cfg.Variables}
+		command := commands.Templating{
+			Templates: cfg.Templates,
+			Variables: cfg.Variables,
+			Logger:    log,
+		}
 		err := command.Run()
 		if err != nil {
-			fmt.Println("butler: " + err.Error())
+			log.Errorf(err.Error())
 		}
 	default:
-		fmt.Printf("butler: Command %s not implemented!", taskType)
+		log.Noticef("Command %s not implemented!", taskType)
 	}
 }

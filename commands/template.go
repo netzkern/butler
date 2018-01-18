@@ -12,6 +12,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/netzkern/butler/config"
+	log "github.com/netzkern/butler/logger"
 	"github.com/netzkern/butler/util"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
@@ -44,6 +45,7 @@ type (
 	Templating struct {
 		Templates []config.Template
 		Variables map[string]string
+		Logger    *log.Logger
 	}
 )
 
@@ -198,7 +200,7 @@ func (t *Templating) Run() error {
 
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Printf("butler: File %s was recovered due to template error! Error: %s \n", path, r)
+				t.Logger.Tracef("butler: File %s was recovered due to template error! Error: %s \n", path, r)
 				ioutil.WriteFile(path, dat, 0644)
 			}
 		}()
