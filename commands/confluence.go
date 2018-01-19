@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	log "github.com/netzkern/butler/logger"
+	logy "github.com/apex/log"
 	"github.com/parnurzeal/gorequest"
 )
 
@@ -12,9 +12,8 @@ import (
 
 type (
 	Confluence struct {
-		Space  Space
-		Auth   BasicAuth
-		Logger *log.Logger
+		Space Space
+		Auth  BasicAuth
 	}
 	BasicAuth struct {
 		Username, Password string
@@ -33,7 +32,7 @@ func (c *Confluence) Run() error {
 		End()
 
 	if len(errs) > 0 {
-		c.Logger.Errorf("could not create Space %+v", errs)
+		logy.Errorf("could not create Space %+v", errs)
 		return fmt.Errorf("could not create Space")
 	} else if resp.StatusCode != 200 {
 		return fmt.Errorf("could not create Space Status %v", resp.StatusCode)

@@ -1,11 +1,16 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 
+	logy "github.com/apex/log"
 	yaml "gopkg.in/yaml.v2"
+)
+
+var (
+	defaultConfigURL = os.Getenv("BUTLER_CONFIG_URL")
 )
 
 type Template struct {
@@ -19,12 +24,33 @@ type Config struct {
 	Variables map[string]string `json:"variables"`
 }
 
+func downloadConfig() ([]byte, error) {
+	resp, err := http.Get(defaultConfigURL)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
+}
+
 func ParseConfig() *Config {
 	cfg := &Config{}
 	dat, err := ioutil.ReadFile("butler.yml")
 	if err != nil {
-		fmt.Println(fmt.Errorf("butler: butler.yml could not be found"))
-		os.Exit(1)
+		logy.Info("butler.yml could not be found")
+
+		if defaultConfigURL == "" {
+			logy.Fatalf("Environment Variable 'BUTLER_CONFIG_URL' was not set")
+		}
+
+		logy.Infof("downloading defaut config butler.yml from %+v", defaultConfigURL)
+
+		dat, err = downloadConfig()
+		if err != nil {
+			logy.Fatalf("butler.yml could not be downloaded from %+v", defaultConfigURL)
+		}
 	}
 
 	err = yaml.Unmarshal(dat, &cfg)

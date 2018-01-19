@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"runtime"
 
-	apexLog "github.com/apex/log"
+	logy "github.com/apex/log"
 	"github.com/netzkern/butler/commands"
 	"github.com/netzkern/butler/config"
-	"github.com/netzkern/butler/logger"
 	update "github.com/tj/go-update"
 	"github.com/tj/go-update/progress"
 	"github.com/tj/go-update/stores/github"
@@ -20,7 +19,6 @@ const (
 )
 
 var (
-	log     *logger.Logger
 	cfg     *config.Config
 	version = "master"
 	qs      = []*survey.Question{
@@ -37,14 +35,8 @@ var (
 
 func init() {
 	// go-update logger
-	apexLog.SetLevel(apexLog.ErrorLevel)
-
+	logy.SetLevel(logy.InfoLevel)
 	cfg = config.ParseConfig()
-	if cfg.Logger == "file" {
-		log = logger.NewFileLogger("butler.log", debug, trace, false, true)
-	} else {
-		log = logger.NewStdLogger(true, debug, trace, false, true)
-	}
 }
 
 func main() {
@@ -64,7 +56,7 @@ func main() {
 
 	err := survey.Ask(qs, &answers)
 	if err != nil {
-		log.Errorf(err.Error())
+		logy.Errorf(err.Error())
 		return
 	}
 
@@ -73,16 +65,15 @@ func main() {
 		command := commands.Templating{
 			Templates: cfg.Templates,
 			Variables: cfg.Variables,
-			Logger:    log,
 		}
 		err := command.Run()
 		if err != nil {
-			log.Errorf(err.Error())
+			logy.Errorf(err.Error())
 		}
 	case "Auto Update":
 		updateApp()
 	default:
-		log.Noticef("Command %s not implemented!", taskType)
+		logy.Infof("Command %s not implemented!", taskType)
 	}
 }
 
@@ -104,12 +95,12 @@ func updateApp() {
 	// fetch the new releases
 	releases, err := m.LatestReleases()
 	if err != nil {
-		log.Fatalf("error fetching releases: %s", err)
+		logy.Fatalf("error fetching releases: %s", err)
 	}
 
 	// no updates
 	if len(releases) == 0 {
-		log.Noticef("no updates")
+		logy.Infof("no updates")
 		return
 	}
 
@@ -119,7 +110,7 @@ func updateApp() {
 	// find the tarball for this system
 	a := latest.FindTarball(runtime.GOOS, runtime.GOARCH)
 	if a == nil {
-		log.Noticef("no binary for your system")
+		logy.Infof("no binary for your system")
 		return
 	}
 
@@ -129,12 +120,12 @@ func updateApp() {
 	// download tarball to a tmp dir
 	tarball, err := a.DownloadProxy(progress.Reader)
 	if err != nil {
-		log.Fatalf("error downloading: %s", err)
+		logy.Fatalf("error downloading: %s", err)
 	}
 
 	// install it
 	if err := m.Install(tarball); err != nil {
-		log.Fatalf("error installing: %s", err)
+		logy.Fatalf("error installing: %s", err)
 	}
 
 	fmt.Printf("Updated to %s\n", latest.Version)

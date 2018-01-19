@@ -11,9 +11,9 @@ import (
 	"text/template"
 	"time"
 
+	logy "github.com/apex/log"
 	"github.com/briandowns/spinner"
 	"github.com/netzkern/butler/config"
-	log "github.com/netzkern/butler/logger"
 	"github.com/netzkern/butler/util"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
@@ -46,7 +46,6 @@ type (
 	Templating struct {
 		Templates []config.Template
 		Variables map[string]string
-		Logger    *log.Logger
 	}
 )
 
@@ -197,7 +196,7 @@ func (t *Templating) Run() error {
 			return nil
 		}
 
-		t.Logger.Tracef("Processing file %v", path)
+		logy.Debugf("Processing file %v", path)
 
 		var templateData = struct {
 			Project *ProjectData
@@ -230,7 +229,7 @@ func (t *Templating) Run() error {
 
 		defer func() {
 			if r := recover(); r != nil {
-				t.Logger.Tracef("file %s was recovered due to template error! Error: %s \n", path, r)
+				logy.Errorf("file %s was recovered due to template error! Error: %s \n", path, r)
 				ioutil.WriteFile(path, dat, 0644)
 			}
 		}()
