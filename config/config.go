@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	defaultConfigURL = os.Getenv("BUTLER_CONFIG_URL")
+	butlerConfigURLEnv = "BUTLER_CONFIG_URL"
+	defaultConfigURL   = os.Getenv(butlerConfigURLEnv)
 )
 
 type Template struct {
@@ -42,7 +43,7 @@ func ParseConfig() *Config {
 		logy.Info("butler.yml could not be found")
 
 		if defaultConfigURL == "" {
-			logy.Fatalf("Environment Variable 'BUTLER_CONFIG_URL' was not set")
+			logy.Fatalf("Environment Variable %s was not set", butlerConfigURLEnv)
 		}
 
 		logy.Infof("downloading defaut config butler.yml from %+v", defaultConfigURL)
