@@ -43,7 +43,7 @@ func ParseConfig() *Config {
 		logy.Info("butler.yml could not be found")
 
 		if defaultConfigURL == "" {
-			logy.Fatalf("Environment Variable %s was not set", butlerConfigURLEnv)
+			logy.Fatalf("environment Variable %s was not set", butlerConfigURLEnv)
 		}
 
 		logy.Infof("downloading defaut config butler.yml from %+v", defaultConfigURL)

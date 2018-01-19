@@ -196,7 +196,7 @@ func (t *Templating) Run() error {
 			return nil
 		}
 
-		logy.Debugf("Processing file %v", path)
+		logy.Debugf("processing file %v", path)
 
 		var templateData = struct {
 			Project *ProjectData
