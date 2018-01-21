@@ -38,6 +38,10 @@ Butler is able to update itself. The latest Github release is used.
 
 Print the version of Butler.
 
+## Configuration
+
+Stay up-to-date with new templates without to update your config manually just set the environment variable `BUTLER_CONFIG_URL` to [butler.yml on master](https://raw.githubusercontent.com/netzkern/butler/master/butler.yml)
+
 ## What Butler template looks like ?
 
 [example-project-template](https://github.com/netzkern/example-project-template)
