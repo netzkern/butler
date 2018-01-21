@@ -27,7 +27,7 @@ var (
 			Validate: survey.Required,
 			Prompt: &survey.Select{
 				Message: "How can I help you, Sir?",
-				Options: []string{"Project Templates", "Auto Update"},
+				Options: []string{"Project Templates", "Auto Update", "Version"},
 			},
 		},
 	}
@@ -40,15 +40,7 @@ func init() {
 }
 
 func main() {
-	fmt.Println("  ____        _   _           ")
-	fmt.Println(" |  _ \\      | | | |          ")
-	fmt.Println(" | |_) |_   _| |_| | ___ _ __ ")
-	fmt.Println(" |  _ <| | | | __| |/ _ \\ '__|")
-	fmt.Println(" | |_) | |_| | |_| |  __/ |   ")
-	fmt.Println(" |____/ \\__,_|\\__|_|\\___|_|   ")
-	fmt.Println("                              ")
-	fmt.Println("Welcome to Butler, your personal assistent to scaffolding your projects.")
-	fmt.Println("Version: ", version)
+	fmt.Println("Welcome to Butler🤵, your personal assistent to scaffolding your projects.\n")
 
 	answers := struct {
 		Action string
@@ -72,6 +64,8 @@ func main() {
 		}
 	case "Auto Update":
 		updateApp()
+	case "Version":
+		fmt.Printf("Version: %s\n", version)
 	default:
 		logy.Infof("Command %s not implemented!", taskType)
 	}
