@@ -2,7 +2,7 @@
 <img src="https://raw.githubusercontent.com/netzkern/butler/master/logo.png" alt="butler" style="max-width:100%;">
 </p>
 
-Welcome to Butler, your personal assistent to scaffolding your projects.
+Welcome to Butler 🤵, your personal assistent to scaffolding your projects.
 Shipped with binaries for Mac, Win and Linux (64-bit).
 
 # Usage
@@ -13,15 +13,13 @@ Shipped with binaries for Mac, Win and Linux (64-bit).
 
 # Commands
 
+* [Project Templates](#project-templates)
+* [Auto Update](#auto-update)
+* [Version](#version)
+
 ## Project Templates
 
-This command will create a new project template and replaces all variables in files and filenames. Project templates are managed in the `butler.yml` file. Butler is shipped with a default config. If you want to create a project template look [here](https://golang.org/pkg/text/template/) for the template features. We use a unique delimiter to avoid collsion with existing template engines.
-
-### Delimiter
-
-```
-butler{ .Project.Name }
-```
+This command will create a new project based on the selected template. It will replaces all variables in files and filenames. Project templates are listed in the `butler.yml` file. Butler is shipped with a default config.
 
 ### Available variables:
 
@@ -30,13 +28,17 @@ butler{ .Project.Name }
 - `Date`: Current Date (RFC3339)
 - `Year`: Current year
 
-You can specify custom variables in the `butler.yml` file. They can be accessed e.g `butler{ .Vars.company }`.
+You can specify custom variables in the `butler.yml` file. They can be accessed by `butler{ .Vars.company }`.
 
-## Auto-Update
+## Auto Update
 
 Butler is able to update itself. The latest Github release is used.
 
-### Demo Template
+## Version
+
+Print the version of Butler.
+
+## What Butler template looks like ?
 
 [example-project-template](https://github.com/netzkern/example-project-template)
 
