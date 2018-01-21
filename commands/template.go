@@ -14,7 +14,7 @@ import (
 	logy "github.com/apex/log"
 	"github.com/briandowns/spinner"
 	"github.com/netzkern/butler/config"
-	"github.com/netzkern/butler/util"
+	"github.com/pinzolo/casee"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
 )
@@ -128,7 +128,7 @@ func (t *Templating) prompts() (*ProjectData, error) {
 		return nil, err
 	}
 
-	project.Name = util.NormalizeProjectName(project.Name)
+	project.Name = casee.ToPascalCase(project.Name)
 
 	return project, nil
 }
@@ -214,8 +214,15 @@ func (t *Templating) Run() error {
 
 		var b bytes.Buffer
 
-		tmpl, err := template.New(path).Delims(startDelim, endDelim).Parse(string(dat))
-		tmplPath, err := template.New(path).Delims(startDelim, endDelim).Parse(path)
+		utilFuncMap := template.FuncMap{
+			"toCamelCase":  casee.ToCamelCase,
+			"toPascalCase": casee.ToPascalCase,
+			"toSnakeCase":  casee.ToSnakeCase,
+		}
+
+		tmpl, err := template.New(path).Delims(startDelim, endDelim).Funcs(utilFuncMap).Parse(string(dat))
+
+		tmplPath, err := template.New(path).Delims(startDelim, endDelim).Funcs(utilFuncMap).Parse(path)
 
 		err = tmplPath.Execute(&b, templateData)
 
