@@ -2,7 +2,7 @@
 <img src="https://raw.githubusercontent.com/netzkern/butler/master/logo.png" alt="butler" style="max-width:100%;">
 </p>
 
-Welcome to Butler 🤵, your personal assistent to scaffolding your projects.
+Welcome to Butler, your personal assistent to scaffolding your projects.
 Shipped with binaries for Mac, Win and Linux (64-bit).
 
 # Usage
