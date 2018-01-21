@@ -145,8 +145,8 @@ func (t *Templating) Run() error {
 
 	if tpl != nil {
 		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-		s.Suffix = " ☐ Cloning repository..."
-		s.FinalMSG = "☑ Repository cloned!\n"
+		s.Suffix = "Cloning repository..."
+		s.FinalMSG = "Repository cloned!\n"
 		s.Start()
 		err := t.cloneRepo(tpl.Url, project.Path)
 		s.Stop()
@@ -158,8 +158,8 @@ func (t *Templating) Run() error {
 	}
 
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Suffix = " ☐ Processing templates..."
-	s.FinalMSG = "☑ Templates proceed!\n"
+	s.Suffix = "Processing templates..."
+	s.FinalMSG = "Templates proceed!\n"
 	s.Start()
 
 	walkErr := filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
