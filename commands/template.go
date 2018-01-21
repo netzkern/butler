@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	allowedExtensions = [...]string{".md", ".txt", ".html", ".htm", ".rtf", ".json", ".yml", ".csproj", ".sln"}
+	allowedExtensions = [...]string{".md", ".txt", ".html", ".htm", ".rtf", ".json", ".yml", ".csproj", ".sln", ".cs"}
 	blacklistDirs     = map[string]bool{
 		"node_modules":     true,
 		"bower_components": true,
