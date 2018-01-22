@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"runtime"
+	"log"
+	"os"
 
 	logy "github.com/apex/log"
+	"github.com/blang/semver"
 	"github.com/netzkern/butler/commands/template"
 	"github.com/netzkern/butler/config"
-	update "github.com/tj/go-update"
-	"github.com/tj/go-update/progress"
-	"github.com/tj/go-update/stores/github"
+	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -20,7 +20,7 @@ const (
 
 var (
 	cfg     *config.Config
-	version = "master"
+	version = "0.0.9"
 	qs      = []*survey.Question{
 		{
 			Name:     "action",
@@ -63,7 +63,7 @@ func main() {
 			logy.Errorf(err.Error())
 		}
 	case "Auto Update":
-		updateApp()
+		confirmAndSelfUpdate()
 	case "Version":
 		fmt.Printf("Version: %s\n", version)
 	default:
@@ -71,56 +71,40 @@ func main() {
 	}
 }
 
-func updateApp() {
-	command := "butler"
+func confirmAndSelfUpdate() {
+	selfupdate.EnableLog()
 
-	if runtime.GOOS == "windows" {
-		command = "butler.exe"
-	}
-
-	m := &update.Manager{
-		Command: command,
-		Store: &github.Store{
-			Owner: "netzkern",
-			Repo:  "butler",
-		},
-	}
-
-	// fetch the new releases
-	releases, err := m.LatestReleases()
+	latest, found, err := selfupdate.DetectLatest("netzkern/butler")
 	if err != nil {
-		logy.Fatalf("error fetching releases: %s", err)
-	}
-
-	// no updates
-	if len(releases) == 0 {
-		logy.Infof("no updates")
+		log.Println("Error occurred while detecting version:", err)
 		return
 	}
 
-	// latest release
-	latest := releases[0]
-
-	// find the tarball for this system
-	a := latest.FindTarball(runtime.GOOS, runtime.GOARCH)
-	if a == nil {
-		logy.Infof("no binary for your system")
+	v := semver.MustParse(version)
+	if !found || latest.Version.Equals(v) {
+		log.Println("Current version is the latest")
 		return
 	}
 
-	// whitespace
-	fmt.Println()
+	update := false
+	prompt := &survey.Confirm{
+		Message: "Do you want to update to " + latest.Version.String() + "?",
+	}
+	survey.AskOne(prompt, &update, nil)
 
-	// download tarball to a tmp dir
-	tarball, err := a.DownloadProxy(progress.Reader)
+	if !update {
+		return
+	}
+
+	cmdPath, err := os.Executable()
 	if err != nil {
-		logy.Fatalf("error downloading: %s", err)
+		logy.WithError(err).Error("os executable")
+		return
 	}
 
-	// install it
-	if err := m.Install(tarball); err != nil {
-		logy.Fatalf("error installing: %s", err)
+	if err := selfupdate.UpdateTo(latest.AssetURL, cmdPath); err != nil {
+		log.Println("Error occurred while updating binary:", err)
+		return
 	}
-
-	fmt.Printf("Updated to %s\n", latest.Version)
+	log.Println("Successfully updated to version", latest.Version)
 }
