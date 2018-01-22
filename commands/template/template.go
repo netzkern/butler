@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -217,11 +218,12 @@ func (t *Templating) Run() error {
 
 	// clone repository
 	if tpl != nil {
+		start := time.Now()
 		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 		s.Suffix = " Cloning repository..."
-		s.FinalMSG = "Repository cloned!\n"
 		s.Start()
 		err := t.cloneRepo(tpl.Url, project.Path)
+		s.FinalMSG = "Repository cloned! " + strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64) + " sec \n"
 		s.Stop()
 		if err != nil {
 			return err
@@ -231,15 +233,16 @@ func (t *Templating) Run() error {
 	}
 
 	// spinner progress
+	start := time.Now()
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Suffix = " Processing templates..."
-	s.FinalMSG = "Templates proceed!\n"
 	s.Start()
 
 	// start multiple routines
 	t.startN(runtime.NumCPU())
 	// close sync.WaitGroup and spinner when finished
 	defer func() {
+		s.FinalMSG = "Templates proceed! " + strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64) + " sec \n"
 		t.stop()
 		s.Stop()
 	}()
@@ -269,6 +272,7 @@ func (t *Templating) Run() error {
 			if ok {
 				return filepath.SkipDir
 			}
+			return nil
 		}
 
 		var templateData = struct {
