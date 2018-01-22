@@ -217,7 +217,7 @@ func (t *Templating) Run() error {
 	// clone repository
 	if tpl != nil {
 		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-		s.Suffix = "Cloning repository..."
+		s.Suffix = " Cloning repository..."
 		s.FinalMSG = "Repository cloned!\n"
 		s.Start()
 		err := t.cloneRepo(tpl.Url, project.Path)
@@ -231,7 +231,7 @@ func (t *Templating) Run() error {
 
 	// spinner progress
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Suffix = "Processing templates..."
+	s.Suffix = " Processing templates..."
 	s.FinalMSG = "Templates proceed!\n"
 	s.Start()
 
@@ -270,15 +270,6 @@ func (t *Templating) Run() error {
 			}
 		}
 
-		// check for valid file extension
-		ext := filepath.Ext(path)
-		_, ok := t.allowedExtensions[ext]
-		if !ok {
-			return nil
-		}
-
-		ctx.Debugf("template")
-
 		var templateData = struct {
 			Project *ProjectData
 			Date    string
@@ -291,11 +282,9 @@ func (t *Templating) Run() error {
 			t.Variables,
 		}
 
-		dat, err := ioutil.ReadFile(path)
-
 		// template file
 		t.ch <- func() {
-			var b bytes.Buffer
+			ctx.Debugf("template")
 
 			utilFuncMap := template.FuncMap{
 				"toCamelCase":  casee.ToCamelCase,
@@ -303,39 +292,43 @@ func (t *Templating) Run() error {
 				"toSnakeCase":  casee.ToSnakeCase,
 			}
 
-			// file content
-			tmpl, err := template.New(path).Delims(startDelim, endDelim).Funcs(utilFuncMap).Parse(string(dat))
-			// filename
 			tmplPath, err := template.New(path).Delims(startDelim, endDelim).Funcs(utilFuncMap).Parse(path)
+			if err != nil {
+				ctx.WithError(err).Error("template filename")
+			}
 
+			var b bytes.Buffer
 			err = tmplPath.Execute(&b, templateData)
+			newPath := b.String()
 
-			f, err := os.Create(path)
-
-			// rename file after content was updated
 			defer func() {
-				err = os.Rename(path, b.String())
-			}()
-
-			// close file descriptor
-			defer f.Close()
-
-			// restore file on error
-			defer func() {
-				if r := recover(); r != nil {
-					ctx.WithError(err).Error("recover file")
-					ioutil.WriteFile(path, dat, 0644)
+				err = os.Rename(path, newPath)
+				if err != nil {
+					ctx.WithField("newPath", newPath)
+					ctx.WithError(err).Error("rename file")
 				}
 			}()
 
-			if err != nil {
-				ctx.WithError(err).Error("read file")
-			}
+			// check for valid file extension
+			ext := filepath.Ext(newPath)
+			_, ok := t.allowedExtensions[ext]
+			if ok {
+				dat, err := ioutil.ReadFile(path)
+				tmpl, err := template.New(newPath).Delims(startDelim, endDelim).Funcs(utilFuncMap).Parse(string(dat))
 
-			err = tmpl.Execute(f, templateData)
+				f, err := os.Create(newPath)
 
-			if err != nil {
-				ctx.WithError(err).Error("template file")
+				defer f.Close()
+
+				if err != nil {
+					ctx.WithError(err).Error("read file")
+				}
+
+				err = tmpl.Execute(f, templateData)
+
+				if err != nil {
+					ctx.WithError(err).Error("template file")
+				}
 			}
 		}
 
