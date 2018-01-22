@@ -28,11 +28,12 @@ const (
 
 var (
 	allowedExtensions = []string{
-		// Text
+		// Templates / Text
 		".md",
 		".txt",
 		".html",
 		".htm",
+		".cshtml",
 		".rtf",
 		// Configuration
 		".json",
