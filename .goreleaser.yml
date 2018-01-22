@@ -14,3 +14,5 @@ archive:
     - LICENSE
     - README.md
     - butler.yml
+## snapshot:
+##  name_template: "0.0.3"
