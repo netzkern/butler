@@ -20,7 +20,7 @@ const (
 
 var (
 	cfg     *config.Config
-	version = "master"
+	version = "0.0.0"
 	qs      = []*survey.Question{
 		{
 			Name:     "action",
