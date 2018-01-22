@@ -72,8 +72,6 @@ func main() {
 }
 
 func confirmAndSelfUpdate() {
-	selfupdate.EnableLog()
-
 	latest, found, err := selfupdate.DetectLatest("netzkern/butler")
 	if err != nil {
 		log.Println("Error occurred while detecting version:", err)
