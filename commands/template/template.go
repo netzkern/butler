@@ -214,16 +214,17 @@ func (t *Templating) Run() error {
 		return err
 	}
 
+	startTime := time.Now()
+
 	tpl := t.getTemplateByName(project.Template)
 
 	// clone repository
 	if tpl != nil {
-		start := time.Now()
 		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-		s.Suffix = " Cloning repository..."
+		s.Suffix = "Cloning repository..."
+		s.FinalMSG = "Repository cloned!\n"
 		s.Start()
 		err := t.cloneRepo(tpl.Url, project.Path)
-		s.FinalMSG = "Repository cloned! " + strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64) + " sec \n"
 		s.Stop()
 		if err != nil {
 			return err
@@ -233,18 +234,18 @@ func (t *Templating) Run() error {
 	}
 
 	// spinner progress
-	start := time.Now()
-	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Suffix = " Processing templates..."
-	s.Start()
+	spinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	spinner.Suffix = "Processing templates..."
+	spinner.FinalMSG = "Templates proceed!\n"
+	spinner.Start()
 
 	// start multiple routines
 	t.startN(runtime.NumCPU())
 	// close sync.WaitGroup and spinner when finished
 	defer func() {
-		s.FinalMSG = "Templates proceed! " + strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64) + " sec \n"
 		t.stop()
-		s.Stop()
+		spinner.Stop()
+		fmt.Printf("\nTotal: %s sec \n", strconv.FormatFloat(time.Since(startTime).Seconds(), 'f', 2, 64))
 	}()
 
 	walkErr := filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
@@ -306,9 +307,9 @@ func (t *Templating) Run() error {
 				ctx.WithError(err).Error("template filename")
 			}
 
-			var b bytes.Buffer
-			err = tmplPath.Execute(&b, templateData)
-			newPath := b.String()
+			var pathBuffer bytes.Buffer
+			err = tmplPath.Execute(&pathBuffer, templateData)
+			newPath := pathBuffer.String()
 
 			// check for valid file extension
 			ext := filepath.Ext(newPath)
