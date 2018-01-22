@@ -20,7 +20,7 @@ const (
 
 var (
 	cfg     *config.Config
-	version = "0.0.0"
+	version = "master"
 	qs      = []*survey.Question{
 		{
 			Name:     "action",
@@ -80,6 +80,7 @@ func confirmAndSelfUpdate() {
 		return
 	}
 
+	fmt.Printf("Version: %s\n", version)
 	v := semver.MustParse(version)
 	if !found || latest.Version.Equals(v) {
 		log.Println("Current version is the latest")
