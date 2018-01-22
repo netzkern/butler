@@ -5,7 +5,7 @@ import (
 	"runtime"
 
 	logy "github.com/apex/log"
-	"github.com/netzkern/butler/commands"
+	"github.com/netzkern/butler/commands/template"
 	"github.com/netzkern/butler/config"
 	update "github.com/tj/go-update"
 	"github.com/tj/go-update/progress"
@@ -54,10 +54,10 @@ func main() {
 
 	switch taskType := answers.Action; taskType {
 	case "Project Templates":
-		command := commands.Templating{
-			Templates: cfg.Templates,
-			Variables: cfg.Variables,
-		}
+		command := template.New(
+			template.WithTemplates(cfg.Templates),
+			template.WithVariables(cfg.Variables),
+		)
 		err := command.Run()
 		if err != nil {
 			logy.Errorf(err.Error())
