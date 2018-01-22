@@ -1,4 +1,4 @@
-package commands
+package confluence
 
 import (
 	"encoding/json"
