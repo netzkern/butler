@@ -153,7 +153,7 @@ func (t *Templating) getTemplateOptions() []string {
 	return tpls
 }
 
-// prompts activate interactive CLI prompt
+// prompts activate interactive CLI
 func (t *Templating) prompts() (*ProjectData, error) {
 	var simpleQs = []*survey.Question{
 		{
@@ -292,7 +292,11 @@ func (t *Templating) Run() error {
 				"toSnakeCase":  casee.ToSnakeCase,
 			}
 
-			tmplPath, err := template.New(path).Delims(startDelim, endDelim).Funcs(utilFuncMap).Parse(path)
+			tmplPath, err := template.New(path).
+				Delims(startDelim, endDelim).
+				Funcs(utilFuncMap).
+				Parse(path)
+
 			if err != nil {
 				ctx.WithError(err).Error("template filename")
 			}
@@ -301,20 +305,15 @@ func (t *Templating) Run() error {
 			err = tmplPath.Execute(&b, templateData)
 			newPath := b.String()
 
-			defer func() {
-				err = os.Rename(path, newPath)
-				if err != nil {
-					ctx.WithField("newPath", newPath)
-					ctx.WithError(err).Error("rename file")
-				}
-			}()
-
 			// check for valid file extension
 			ext := filepath.Ext(newPath)
 			_, ok := t.allowedExtensions[ext]
 			if ok {
 				dat, err := ioutil.ReadFile(path)
-				tmpl, err := template.New(newPath).Delims(startDelim, endDelim).Funcs(utilFuncMap).Parse(string(dat))
+				tmpl, err := template.New(newPath).
+					Delims(startDelim, endDelim).
+					Funcs(utilFuncMap).
+					Parse(string(dat))
 
 				f, err := os.Create(newPath)
 
@@ -326,9 +325,15 @@ func (t *Templating) Run() error {
 
 				err = tmpl.Execute(f, templateData)
 
+				if path != newPath {
+					os.Remove(path)
+				}
+
 				if err != nil {
 					ctx.WithError(err).Error("template file")
 				}
+			} else {
+				os.Rename(path, newPath)
 			}
 		}
 

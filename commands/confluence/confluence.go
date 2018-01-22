@@ -23,6 +23,35 @@ type (
 	}
 )
 
+// Option function.
+type Option func(*Confluence)
+
+// New Confluence command
+func New(options ...Option) *Confluence {
+	c := &Confluence{}
+
+	for _, o := range options {
+		o(c)
+	}
+
+	return c
+}
+
+// WithSpace option.
+func WithSpace(space Space) Option {
+	return func(c *Confluence) {
+		c.Space = space
+	}
+}
+
+// WithAuth option.
+func WithAuth(auth BasicAuth) Option {
+	return func(c *Confluence) {
+		c.Auth = auth
+	}
+}
+
+// Run the command
 func (c *Confluence) Run() error {
 	mJSON, _ := json.Marshal(c.Space)
 

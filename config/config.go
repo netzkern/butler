@@ -25,6 +25,7 @@ type Config struct {
 	Variables map[string]string `json:"variables"`
 }
 
+// downloadConfig download full file from web
 func downloadConfig(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -36,6 +37,7 @@ func downloadConfig(url string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
+// ParseConfig returns the yaml parsed config
 func ParseConfig() *Config {
 	cfg := &Config{
 		Templates: []Template{},
