@@ -3,7 +3,7 @@
 </p>
 
 Butler is an automatation tool to bootstrap a project in only a few seconds. We provide a powerful interactive cli.
-When you create a project template you can create a [`Survey`](/docs/templateSurveys.md) which is used to collect information from the user. The answers can be used to generate individual templates.
+When you create a project template you can create a [`Survey`](/docs/templateSurveys.md). Surveys are used to collect informations from the users to generate individual templates.
 
 ## Usage
 
