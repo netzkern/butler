@@ -2,15 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"runtime"
 
 	logy "github.com/apex/log"
-	"github.com/blang/semver"
 	"github.com/netzkern/butler/commands/template"
 	"github.com/netzkern/butler/config"
-	"github.com/rhysd/go-github-selfupdate/selfupdate"
+	"github.com/netzkern/butler/updater"
 	"github.com/urfave/cli"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/core"
@@ -85,7 +83,7 @@ func interactiveCliMode() {
 			logy.Errorf(err.Error())
 		}
 	case "Auto Update":
-		confirmAndSelfUpdate()
+		updater.ConfirmAndSelfUpdate(repository, version)
 	case "Version":
 		fmt.Printf("Version: %s\n", version)
 	default:
@@ -119,43 +117,6 @@ func cliMode() {
 	}
 
 	app.Run(os.Args)
-}
-
-func confirmAndSelfUpdate() {
-	latest, found, err := selfupdate.DetectLatest(repository)
-	if err != nil {
-		log.Println("Error occurred while detecting version:", err)
-		return
-	}
-
-	fmt.Printf("Version: %s\n", version)
-	v := semver.MustParse(version)
-	if !found || latest.Version.Equals(v) {
-		log.Println("Current version is the latest")
-		return
-	}
-
-	update := false
-	prompt := &survey.Confirm{
-		Message: "Do you want to update to " + latest.Version.String() + "?",
-	}
-	survey.AskOne(prompt, &update, nil)
-
-	if !update {
-		return
-	}
-
-	cmdPath, err := os.Executable()
-	if err != nil {
-		logy.WithError(err).Error("os executable")
-		return
-	}
-
-	if err := selfupdate.UpdateTo(latest.AssetURL, cmdPath); err != nil {
-		log.Println("Error occurred while updating binary:", err)
-		return
-	}
-	log.Println("Successfully updated to version", latest.Version)
 }
 
 func main() {
