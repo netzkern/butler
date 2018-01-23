@@ -26,7 +26,7 @@ func ReadSurveyConfig(path string) (*Survey, error) {
 	survey := &Survey{}
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
-		logy.Warn("butler-survey.yml could not be found")
+		logy.Warnf("%s could not be found", path)
 		return survey, err
 	}
 
