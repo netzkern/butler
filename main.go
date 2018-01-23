@@ -4,18 +4,23 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 
 	logy "github.com/apex/log"
 	"github.com/blang/semver"
 	"github.com/netzkern/butler/commands/template"
 	"github.com/netzkern/butler/config"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
+	"github.com/urfave/cli"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/core"
 )
 
 const (
-	debug = false
-	trace = false
+	debug   = false
+	trace   = false
+	appName = "Butler"
+	appDesc = "Welcome to Butler🤵, your personal assistent to scaffolding your projects.\n"
 )
 
 var (
@@ -37,10 +42,29 @@ func init() {
 	// go-update logger
 	logy.SetLevel(logy.InfoLevel)
 	cfg = config.ParseConfig()
+
+	// Windows comaptible symbols
+	if runtime.GOOS == "windows" {
+		core.ErrorIcon = "X"
+		core.HelpIcon = "????"
+		core.QuestionIcon = "?"
+		core.SelectFocusIcon = ">"
+		core.MarkedOptionIcon = "[x]"
+		core.UnmarkedOptionIcon = "[ ]"
+	}
 }
 
 func main() {
-	fmt.Println("Welcome to Butler🤵, your personal assistent to scaffolding your projects.\n")
+	if len(os.Args[1:]) > 0 {
+		cliMode()
+		return
+	}
+
+	interactiveCliMode()
+}
+
+func interactiveCliMode() {
+	fmt.Println(appDesc)
 
 	answers := struct {
 		Action string
@@ -69,6 +93,34 @@ func main() {
 	default:
 		logy.Infof("Command %s not implemented!", taskType)
 	}
+}
+
+func cliMode() {
+	app := cli.NewApp()
+	app.Name = appName
+	app.Usage = "your personal assistent to scaffolding your projects."
+	app.Author = "netzkern AG"
+	app.Version = version
+	app.Description = appDesc
+	app.Commands = []cli.Command{
+		{
+			Name:    "template",
+			Aliases: []string{"t"},
+			Usage:   "options for task templates",
+			Subcommands: []cli.Command{
+				{
+					Name:  "create",
+					Usage: "checkout a new template",
+					Action: func(c *cli.Context) error {
+						fmt.Println("new task template: ", c.Args().First())
+						return nil
+					},
+				},
+			},
+		},
+	}
+
+	app.Run(os.Args)
 }
 
 func confirmAndSelfUpdate() {

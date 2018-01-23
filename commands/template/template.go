@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -28,24 +29,6 @@ const (
 )
 
 var (
-	allowedExtensions = []string{
-		// Templates / Text
-		".md",
-		".txt",
-		".html",
-		".htm",
-		".cshtml",
-		".rtf",
-		// Configuration
-		".json",
-		".yml",
-		// Project
-		".csproj",
-		".sln",
-		// Code
-		".cs",
-		".js",
-	}
 	excludedDirs = []string{
 		"node_modules",
 		"bower_components",
@@ -55,15 +38,8 @@ var (
 		"log",
 		"logs",
 		"bin",
+		"lib",
 		"typings",
-
-		"__tests__",
-		"test",
-		"tests",
-		"powered-test",
-		"images",
-		"assets",
-		"coverage",
 	}
 )
 
@@ -77,12 +53,11 @@ type (
 	}
 	// Templating command
 	Templating struct {
-		Templates         []config.Template
-		Variables         map[string]string
-		allowedExtensions map[string]struct{}
-		excludedDirs      map[string]struct{}
-		ch                chan func()
-		wg                sync.WaitGroup
+		Templates    []config.Template
+		Variables    map[string]string
+		excludedDirs map[string]struct{}
+		ch           chan func()
+		wg           sync.WaitGroup
 	}
 )
 
@@ -92,9 +67,8 @@ type Option func(*Templating)
 // New with the given options.
 func New(options ...Option) *Templating {
 	v := &Templating{
-		allowedExtensions: toMap(allowedExtensions),
-		excludedDirs:      toMap(excludedDirs),
-		ch:                make(chan func()),
+		excludedDirs: toMap(excludedDirs),
+		ch:           make(chan func()),
 	}
 
 	for _, o := range options {
@@ -155,9 +129,9 @@ func (t *Templating) getTemplateOptions() []string {
 	return tpls
 }
 
-// prompts activate interactive CLI
-func (t *Templating) prompts() (*ProjectData, error) {
-	var simpleQs = []*survey.Question{
+// GetQuestions return all fixed prompts
+func (t *Templating) GetQuestions() []*survey.Question {
+	qs := []*survey.Question{
 		{
 			Name:     "Template",
 			Validate: survey.Required,
@@ -192,29 +166,18 @@ func (t *Templating) prompts() (*ProjectData, error) {
 		},
 	}
 
-	var project = &ProjectData{}
-
-	// ask the question
-	err := survey.Ask(simpleQs, project)
-
-	if err != nil {
-		return nil, err
-	}
-
-	project.Name = casee.ToPascalCase(project.Name)
-
-	return project, nil
+	return qs
 }
 
 // Run the command
 func (t *Templating) Run() error {
-	project, err := t.prompts()
+	var project = &ProjectData{}
+
+	err := survey.Ask(t.GetQuestions(), project)
 
 	if err != nil {
 		return err
 	}
-
-	startTime := time.Now()
 
 	tpl := t.getTemplateByName(project.Template)
 
@@ -233,6 +196,31 @@ func (t *Templating) Run() error {
 		return fmt.Errorf("template %s could not be found", project.Template)
 	}
 
+	surveyFile := path.Join(project.Path, "butler-survey.yml")
+	ctx := logy.WithFields(logy.Fields{
+		"path": surveyFile,
+	})
+
+	// dynamic survey for the template
+	surveyResults := make(map[string]interface{})
+	surveys, err := ReadSurveyConfig(surveyFile)
+	if err == nil {
+		questions, err := BuildSurveys(surveys)
+		if err != nil {
+			ctx.WithError(err).Error("build surveys")
+			return err
+		}
+
+		err = survey.Ask(questions, &surveyResults)
+
+		if err != nil {
+			ctx.WithError(err).Error("start survey")
+			return err
+		}
+	}
+
+	startTime := time.Now()
+
 	// spinner progress
 	spinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	spinner.Suffix = "Processing templates..."
@@ -241,6 +229,7 @@ func (t *Templating) Run() error {
 
 	// start multiple routines
 	t.startN(runtime.NumCPU())
+
 	// close sync.WaitGroup and spinner when finished
 	defer func() {
 		t.stop()
@@ -296,6 +285,20 @@ func (t *Templating) Run() error {
 				"toCamelCase":  casee.ToCamelCase,
 				"toPascalCase": casee.ToPascalCase,
 				"toSnakeCase":  casee.ToSnakeCase,
+				"getSurveyResult": func(key string) string {
+					val, ok := surveyResults[key]
+					if ok {
+						switch v := val.(type) {
+						case []string:
+							return strings.Join(v, ",")
+						case string:
+							return v
+							return ""
+						}
+					}
+					ctx.Errorf("map access with key '%s' failed", key)
+					return ""
+				},
 			}
 
 			tmplPath, err := template.New(path).
@@ -316,38 +319,30 @@ func (t *Templating) Run() error {
 			}
 
 			newPath := pathBuffer.String()
+			dat, err := ioutil.ReadFile(path)
+			tmpl, err := template.New(newPath).
+				Delims(startDelim, endDelim).
+				Funcs(utilFuncMap).
+				Parse(string(dat))
 
-			// check for valid file extension
-			ext := filepath.Ext(newPath)
-			_, ok := t.allowedExtensions[ext]
-			if ok {
-				dat, err := ioutil.ReadFile(path)
-				tmpl, err := template.New(newPath).
-					Delims(startDelim, endDelim).
-					Funcs(utilFuncMap).
-					Parse(string(dat))
+			f, err := os.Create(newPath)
 
-				f, err := os.Create(newPath)
+			defer f.Close()
 
-				defer f.Close()
+			if err != nil {
+				ctx.WithError(err).Error("read file")
+				return
+			}
 
-				if err != nil {
-					ctx.WithError(err).Error("read file")
-					return
-				}
+			err = tmpl.Execute(f, templateData)
 
-				err = tmpl.Execute(f, templateData)
+			if err != nil {
+				ctx.WithError(err).Error("template file")
+				return
+			}
 
-				if err != nil {
-					ctx.WithError(err).Error("template file")
-					return
-				}
-
-				if path != newPath {
-					os.Remove(path)
-				}
-			} else {
-				os.Rename(path, newPath)
+			if path != newPath {
+				os.Remove(path)
 			}
 		}
 
