@@ -1,6 +1,6 @@
 # Butler Template Surveys
 
-Your are able to create an interactive survey before your template is proceed. The results can be used as template variables.
+Your are able to create an interactive survey before your template is proceed. The results can be used inside the template.
 
 ## How to create a survey?
 
