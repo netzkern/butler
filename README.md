@@ -11,27 +11,23 @@ Shipped with binaries for Mac, Win and Linux (64-bit).
 2. Install in `PATH`
 3. Run `butler`
 
-# Commands
+# Documentation
+
+* <a href="/docs/templateSurveys.md"><code><b>Template Surveys</b></code></a>
+* <a href="/docs/templateSyntax.md"><code><b>Template Syntax</b></code></a>
+
+## Commands
 
 * [Project Templates](#project-templates)
-* [Auto Update](#auto-update)
-* [Version](#version)
 
-## Project Templates
+### Project Templates
 
-This command will create a new project based on the selected template. It will replaces all variables in files and filenames. Project templates are listed in the `butler.yml` file. Butler is shipped with a default config.
+This command will create a new project based on the selected template.
 
-## Auto Update
+## Maintenance
 
-Butler is able to update itself. The latest Github release is used.
-
-## Version
-
-Print the version of Butler.
-
-## Configuration
-
-Stay up-to-date with new templates without to update your config manually just set the environment variable `BUTLER_CONFIG_URL` to [butler.yml on master](https://raw.githubusercontent.com/netzkern/butler/master/butler.yml) and both configs are merged.
+- Butler is able to update itself. The latest Github release is used.
+- Stay up-to-date with new templates without to update your config manually just set the environment variable `BUTLER_CONFIG_URL` to [butler.yml on master](https://raw.githubusercontent.com/netzkern/butler/master/butler.yml) and both configs are merged.
 
 ## What Butler template looks like ?
 
