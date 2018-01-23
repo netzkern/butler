@@ -24,15 +24,20 @@ const (
 )
 
 var (
-	cfg     *config.Config
-	version = "master"
-	qs      = []*survey.Question{
+	cfg      *config.Config
+	version  = "master"
+	commands = []string{
+		"Project Templates",
+		"Auto Update",
+		"Version",
+	}
+	qs = []*survey.Question{
 		{
 			Name:     "action",
 			Validate: survey.Required,
 			Prompt: &survey.Select{
 				Message: "How can I help you, Sir?",
-				Options: []string{"Project Templates", "Auto Update", "Version"},
+				Options: commands,
 			},
 		},
 	}

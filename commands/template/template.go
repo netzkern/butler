@@ -179,6 +179,8 @@ func (t *Templating) Run() error {
 		return err
 	}
 
+	startTime := time.Now()
+
 	tpl := t.getTemplateByName(project.Template)
 
 	// clone repository
@@ -218,8 +220,6 @@ func (t *Templating) Run() error {
 			return err
 		}
 	}
-
-	startTime := time.Now()
 
 	// spinner progress
 	spinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
@@ -293,10 +293,12 @@ func (t *Templating) Run() error {
 							return strings.Join(v, ",")
 						case string:
 							return v
-							return ""
+						default:
+							ctx.Errorf("invalid value behind key '%s' ", key)
 						}
+					} else {
+						ctx.Errorf("map access with key '%s' failed", key)
 					}
-					ctx.Errorf("map access with key '%s' failed", key)
 					return ""
 				},
 			}

@@ -63,7 +63,7 @@ func BuildSurveys(butlerSurveys ...*Survey) ([]*survey.Question, error) {
 				if question.Default != nil {
 					defaultValue, ok := question.Default.([]interface{})
 					if !ok {
-						return nil, fmt.Errorf("default value must be an array on multiselect questions")
+						return nil, fmt.Errorf("default value must be an array of strings on multiselect questions")
 					}
 					for _, v := range defaultValue {
 						s, ok := v.(string)
