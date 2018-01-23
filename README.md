@@ -35,8 +35,8 @@ This command will create a new project based on the selected template.
 
 ## Roadmap
 
-- Jira Integration
-- Confluence Integration
+- [ ] Jira Integration
+- [ ] Confluence Integration
 
 ### Credits
 
