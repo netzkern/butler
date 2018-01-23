@@ -293,21 +293,19 @@ func (t *Templating) Run() error {
 				"toCamelCase":  casee.ToCamelCase,
 				"toPascalCase": casee.ToPascalCase,
 				"toSnakeCase":  casee.ToSnakeCase,
-				"getSurveyResult": func(key string) string {
+				"join":         strings.Join,
+				"getSurveyResult": func(key string) interface{} {
 					val, ok := surveyResults[key]
 					if ok {
-						switch v := val.(type) {
-						case []string:
-							return strings.Join(v, ",")
-						case string:
+						v, ok := val.(string)
+						if ok {
 							return v
-						default:
-							ctx.Errorf("invalid value behind key '%s' ", key)
 						}
-					} else {
-						ctx.Errorf("map access with key '%s' failed", key)
+						return v
 					}
-					return ""
+					ctx.Errorf("map access with key '%s' failed", key)
+
+					return val
 				},
 			}
 
@@ -336,6 +334,12 @@ func (t *Templating) Run() error {
 				Parse(string(dat))
 
 			f, err := os.Create(newPath)
+
+			defer func() {
+				if r := recover(); r != nil {
+					ctx.Error("template error")
+				}
+			}()
 
 			defer f.Close()
 
