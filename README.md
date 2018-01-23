@@ -5,24 +5,21 @@
 Welcome to Butler, your personal assistent to scaffolding your projects.
 Shipped with binaries for Mac, Win and Linux (64-bit).
 
-# Usage
+## Usage
 
 1. [Download here](https://github.com/netzkern/butler/releases)
 2. Install in `PATH`
 3. Run `butler`
 
-# Documentation
+## Documentation
 
 * <a href="/docs/templateSurveys.md"><code><b>Template Surveys</b></code></a>
 * <a href="/docs/templateSyntax.md"><code><b>Template Syntax</b></code></a>
+* <a href="#commands"><code><b>Commands</b></code></a>
 
 ## Commands
 
-* [Project Templates](#project-templates)
-
-### Project Templates
-
-This command will create a new project based on the selected template.
+- **Project Templates:** This command will create a new project based on the selected template.
 
 ## Maintenance
 
