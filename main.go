@@ -17,10 +17,12 @@ import (
 )
 
 const (
-	debug   = false
-	trace   = false
-	appName = "Butler"
-	appDesc = "Welcome to Butler🤵, your personal assistent to scaffolding your projects.\n"
+	debug      = false
+	trace      = false
+	appName    = "Butler"
+	appDesc    = "Welcome to Butler🤵, your personal assistent to scaffolding your projects.\n"
+	author     = "netzkern AG"
+	repository = "netzkern/butler"
 )
 
 var (
@@ -59,15 +61,6 @@ func init() {
 	}
 }
 
-func main() {
-	if len(os.Args[1:]) > 0 {
-		cliMode()
-		return
-	}
-
-	interactiveCliMode()
-}
-
 func interactiveCliMode() {
 	fmt.Println(appDesc)
 
@@ -104,7 +97,7 @@ func cliMode() {
 	app := cli.NewApp()
 	app.Name = appName
 	app.Usage = "your personal assistent to scaffolding your projects."
-	app.Author = "netzkern AG"
+	app.Author = author
 	app.Version = version
 	app.Description = appDesc
 	app.Commands = []cli.Command{
@@ -129,7 +122,7 @@ func cliMode() {
 }
 
 func confirmAndSelfUpdate() {
-	latest, found, err := selfupdate.DetectLatest("netzkern/butler")
+	latest, found, err := selfupdate.DetectLatest(repository)
 	if err != nil {
 		log.Println("Error occurred while detecting version:", err)
 		return
@@ -163,4 +156,13 @@ func confirmAndSelfUpdate() {
 		return
 	}
 	log.Println("Successfully updated to version", latest.Version)
+}
+
+func main() {
+	if len(os.Args[1:]) > 0 {
+		cliMode()
+		return
+	}
+
+	interactiveCliMode()
 }
