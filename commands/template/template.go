@@ -229,6 +229,8 @@ func (t *Templating) Run() error {
 		}
 	}
 
+	logy.Debugf("Survey results %+v", surveyResults)
+
 	// spinner progress
 	spinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	spinner.Suffix = "Processing templates..."
@@ -250,12 +252,6 @@ func (t *Templating) Run() error {
 			return err
 		}
 
-		ctx := logy.WithFields(logy.Fields{
-			"path": path,
-			"size": info.Size(),
-			"dir":  info.IsDir(),
-		})
-
 		// ignore hidden dirs and files
 		if strings.HasPrefix(info.Name(), ".") {
 			if info.IsDir() {
@@ -272,6 +268,12 @@ func (t *Templating) Run() error {
 			}
 			return nil
 		}
+
+		ctx := logy.WithFields(logy.Fields{
+			"path": path,
+			"size": info.Size(),
+			"dir":  info.IsDir(),
+		})
 
 		var templateData = struct {
 			Project *ProjectData
@@ -301,8 +303,9 @@ func (t *Templating) Run() error {
 						if ok {
 							return v
 						}
-						return v
+						return val
 					}
+					fmt.Printf("%+v, %v \n", val, ok)
 					ctx.Errorf("map access with key '%s' failed", key)
 
 					return val
