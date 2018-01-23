@@ -2,8 +2,8 @@
 <img src="https://raw.githubusercontent.com/netzkern/butler/master/logo.png" alt="butler" style="max-width:100%;">
 </p>
 
-Welcome to Butler, your personal assistent to scaffolding your projects.
-Shipped with binaries for Mac, Win and Linux (64-bit).
+Butler is an automatation tool to bootstrap a project in only a few seconds. We provide a powerful interactive cli.
+When you create a project template you can create a [`Survey`](/docs/templateSurveys.md) which is used to collect information from the user. The answers can be used to generate individual templates.
 
 ## Usage
 
