@@ -304,11 +304,17 @@ func (t *Templating) Run() error {
 				Parse(path)
 
 			if err != nil {
-				ctx.WithError(err).Error("template filename")
+				ctx.WithError(err).Error("create template for filename")
+				return
 			}
 
 			var pathBuffer bytes.Buffer
 			err = tmplPath.Execute(&pathBuffer, templateData)
+			if err != nil {
+				ctx.WithError(err).Error("template for filename")
+				return
+			}
+
 			newPath := pathBuffer.String()
 
 			// check for valid file extension
@@ -327,16 +333,18 @@ func (t *Templating) Run() error {
 
 				if err != nil {
 					ctx.WithError(err).Error("read file")
+					return
 				}
 
 				err = tmpl.Execute(f, templateData)
 
-				if path != newPath {
-					os.Remove(path)
-				}
-
 				if err != nil {
 					ctx.WithError(err).Error("template file")
+					return
+				}
+
+				if path != newPath {
+					os.Remove(path)
 				}
 			} else {
 				os.Rename(path, newPath)
