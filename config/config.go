@@ -38,14 +38,14 @@ func downloadConfig(url string) ([]byte, error) {
 }
 
 // ParseConfig returns the yaml parsed config
-func ParseConfig() *Config {
+func ParseConfig(filename string) *Config {
 	cfg := &Config{
 		Templates: []Template{},
 		Variables: map[string]string{},
 	}
-	dat, err := ioutil.ReadFile("butler.yml")
+	dat, err := ioutil.ReadFile(filename)
 	if err != nil {
-		logy.Warn("butler.yml could not be found")
+		logy.Warnf("%s could not be found", filename)
 	}
 
 	cfgExt := &Config{
@@ -69,7 +69,7 @@ func ParseConfig() *Config {
 
 		dat, err := downloadConfig(u.String())
 		if err != nil {
-			logy.Fatalf("butler.yml could not be downloaded from %+v", defaultConfigURL)
+			logy.Fatalf("%s could not be downloaded from %+v", filename, defaultConfigURL)
 		}
 		err = yaml.Unmarshal(dat, &cfgExt)
 		if err != nil {

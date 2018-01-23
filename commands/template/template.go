@@ -55,6 +55,7 @@ type (
 	Templating struct {
 		Templates    []config.Template
 		Variables    map[string]string
+		configName   string
 		excludedDirs map[string]struct{}
 		ch           chan func()
 		wg           sync.WaitGroup
@@ -82,6 +83,13 @@ func New(options ...Option) *Templating {
 func WithVariables(s map[string]string) Option {
 	return func(v *Templating) {
 		v.Variables = s
+	}
+}
+
+// SetConfigName option.
+func SetConfigName(s string) Option {
+	return func(v *Templating) {
+		v.configName = s
 	}
 }
 
@@ -198,7 +206,7 @@ func (t *Templating) Run() error {
 		return fmt.Errorf("template %s could not be found", project.Template)
 	}
 
-	surveyFile := path.Join(project.Path, "butler-survey.yml")
+	surveyFile := path.Join(project.Path, t.configName)
 	ctx := logy.WithFields(logy.Fields{
 		"path": surveyFile,
 	})

@@ -15,12 +15,14 @@ import (
 )
 
 const (
-	debug      = false
-	trace      = false
-	appName    = "Butler"
-	appDesc    = "Welcome to Butler🤵, your personal assistent to scaffolding your projects.\n"
-	author     = "netzkern AG"
-	repository = "netzkern/butler"
+	debug          = false
+	trace          = false
+	appName        = "Butler"
+	appDesc        = "Welcome to Butler🤵, your personal assistent to scaffolding your projects.\n"
+	author         = "netzkern AG"
+	repository     = "netzkern/butler"
+	surveyFilename = "butler-survey.yml"
+	configName     = "butler.yml"
 )
 
 var (
@@ -46,7 +48,7 @@ var (
 func init() {
 	// go-update logger
 	logy.SetLevel(logy.InfoLevel)
-	cfg = config.ParseConfig()
+	cfg = config.ParseConfig(configName)
 
 	// Windows comaptible symbols
 	if runtime.GOOS == "windows" {
@@ -77,6 +79,7 @@ func interactiveCliMode() {
 		command := template.New(
 			template.WithTemplates(cfg.Templates),
 			template.WithVariables(cfg.Variables),
+			template.SetConfigName(surveyFilename),
 		)
 		err := command.Run()
 		if err != nil {
