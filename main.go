@@ -46,7 +46,6 @@ var (
 )
 
 func init() {
-	os.RemoveAll("./src")
 	logy.SetLevel(logy.InfoLevel)
 	cfg = config.ParseConfig(configName)
 
