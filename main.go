@@ -18,7 +18,7 @@ const (
 	debug          = false
 	trace          = false
 	appName        = "Butler"
-	appDesc        = "Welcome to Butler🤵, your personal assistent to scaffold new projects.\n"
+	appDesc        = "Welcome to Butler, your personal assistent to scaffold new projects.\n"
 	author         = "netzkern AG"
 	repository     = "netzkern/butler"
 	surveyFilename = "butler-survey.yml"
@@ -46,7 +46,7 @@ var (
 )
 
 func init() {
-	// go-update logger
+	os.RemoveAll("./src")
 	logy.SetLevel(logy.InfoLevel)
 	cfg = config.ParseConfig(configName)
 

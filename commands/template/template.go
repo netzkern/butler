@@ -47,6 +47,7 @@ type (
 		wg           sync.WaitGroup
 		surveyResult map[string]interface{}
 		project      *ProjectData
+		surveys      *Survey
 	}
 )
 
@@ -227,6 +228,7 @@ func (t *Templating) startTemplateSurvey(path string) error {
 		}
 	}
 
+	t.surveys = surveys
 	t.surveyResult = surveyResults
 
 	logy.Debugf("Survey results %+v", surveyResults)
@@ -314,6 +316,15 @@ func (t *Templating) Run() error {
 		})(val)
 	}
 
+	// create getter functions for the survey options for easier access
+	for _, question := range t.surveys.Questions {
+		utilFuncMap["get"+casee.ToPascalCase(question.Name+"Question")] = (func(v Question) func() interface{} {
+			return func() interface{} {
+				return question
+			}
+		})(question)
+	}
+
 	renamings := make(map[string]string)
 	removings := []string{}
 
@@ -372,6 +383,8 @@ func (t *Templating) Run() error {
 				newDirectory := dirNameBuffer.String()
 				newPath := filepath.Join(filepath.Dir(path), newDirectory)
 
+				// when directory contains a condition
+				// order is irrelevant
 				if strings.TrimSpace(newPath) == "" {
 					removings = append(removings, newPath)
 				} else if path != newPath {
@@ -386,15 +399,18 @@ func (t *Templating) Run() error {
 		return walkDirErr
 	}
 
-	// rename and remove dirs
+	// rename and remove changed dirs
 	for oldPath, newPath := range renamings {
 		os.Rename(oldPath, newPath)
 		os.RemoveAll(oldPath)
 	}
 
+	// remove directories which are evaluated to empty string
 	for _, path := range removings {
 		os.RemoveAll(path)
 	}
+
+	removings = []string{}
 
 	// iterate through all files
 	walkErr := filepath.Walk(t.project.Path,
@@ -453,6 +469,14 @@ func (t *Templating) Run() error {
 
 				newFilename := filenameBuffer.String()
 				newPath := filepath.Join(filepath.Dir(path), newFilename)
+
+				// when filename contains a condition
+				// append order is irrelevant
+				if strings.TrimSpace(newPath) == "" {
+					removings = append(removings, newPath)
+					return
+				}
+
 				dat, err := ioutil.ReadFile(path)
 
 				if err != nil {
@@ -499,6 +523,11 @@ func (t *Templating) Run() error {
 
 	if walkErr != nil {
 		return walkErr
+	}
+
+	// remove files which are evaluated to empty string
+	for _, path := range removings {
+		os.RemoveAll(path)
 	}
 
 	return nil

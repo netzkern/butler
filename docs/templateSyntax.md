@@ -44,9 +44,10 @@ butler{getDatabase}
 ```
 
 ## Conditional directories and files
-Based on the survey you can decide which directories or files should be included or removed. The following example will include the folder when the question about the `database` will be answered with first option `0`.
-```
+Based on the survey you can decide which directories or files should be included or removed. The following example will include the folder when the question about the `database` will be answered with `mongodb`.
+butler{if eq getDatabase `mongodb` } mongodb butler{end}
 butler{if eq getDatabase (index getDatabaseQuestion.Options 0) } mongodb butler{end}
+butler{print getColor `.md`}
 ```
 
 ## Conditions in templates
