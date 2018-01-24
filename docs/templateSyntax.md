@@ -34,7 +34,7 @@ variables:
 - Current Date: butler{ .Date }
 - Current Year: butler{ .Year }
 
-## Custom variables
+## Define custom variables
 - Company: butler{ .Vars.company }
 - Email: butler{ .Vars.email }
 
@@ -42,6 +42,14 @@ variables:
 - butler{ toCamelCase .Project.Name }
 - butler{ toPascalCase "foo-bar" }
 - butler{ toSnakeCase "foo-bar" }
+- butler{ toPascalCase "foo-bar" }
+- butler{ print uuid }
+
+## Define variables in templates
+```
+butler{$id := uuid} // generate id
+butler{$id} // print id
+```
 
 ## Get survey results
 We generate getter functions to provide an easier access to survey results. If you set the name e.g to `name=db` to a question you can access the value with:
