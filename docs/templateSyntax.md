@@ -1,6 +1,6 @@
 # Butler Template Syntax
 
-We use the template engine from Go. [Here](https://golang.org/pkg/text/template/) you can find an overview about all template features you can use in your templates. We use a unique delimiter to avoid collsion with existing template engines.
+We use the template engine from Go. [Here](https://golang.org/pkg/text/template/) you can find an overview about all template features. We use a unique delimiter to avoid collsion with existing template engines.
 
 ## Delimiter
 
