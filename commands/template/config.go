@@ -21,7 +21,7 @@ type Survey struct {
 	Questions []Question `json:"questions"`
 }
 
-// ReadSurveyConfig read the config and return a survey
+// ReadSurveyConfig reads the config and return a new survey
 func ReadSurveyConfig(path string) (*Survey, error) {
 	survey := &Survey{}
 	dat, err := ioutil.ReadFile(path)

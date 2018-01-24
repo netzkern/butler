@@ -8,6 +8,11 @@ We use the template engine from Go. [Here](https://golang.org/pkg/text/template/
 butler{<expr>} 
 ```
 
+## Where can I use templates?
+- Filenames
+- Directories
+- Text files (.html, .md, .txt, .cshtml, .cs, .js ...)
+
 ## Custom variables
 You can specify custom variables in the `butler.yml` file. They can be accessed by `butler{ .Vars.company }`.
 

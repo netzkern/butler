@@ -6,6 +6,7 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
+// BuildSurveys generates a list of survey questions based on the template survey
 func BuildSurveys(butlerSurveys ...*Survey) ([]*survey.Question, error) {
 	var qs []*survey.Question
 
