@@ -248,18 +248,18 @@ func (t *Templating) Run() error {
 		return err
 	}
 
-	startTime := time.Now()
-
 	tpl := t.getTemplateByName(t.project.Template)
+	var cloneDuration float64
 
 	// clone repository
 	if tpl != nil {
+		startTimeClone := time.Now()
 		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 		s.Suffix = "Cloning repository..."
-		s.FinalMSG = "Repository cloned!\n"
 		s.Start()
 		err := t.cloneRepo(tpl.Url, t.project.Path)
 		s.Stop()
+		cloneDuration = time.Since(startTimeClone).Seconds()
 		if err != nil {
 			return err
 		}
@@ -280,17 +280,19 @@ func (t *Templating) Run() error {
 	// spinner progress
 	spinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	spinner.Suffix = "Processing templates..."
-	spinner.FinalMSG = "Templates proceed!\n"
 	spinner.Start()
 
 	// start multiple routines
 	t.startN(runtime.NumCPU())
+	startTimeTemplating := time.Now()
 
 	// close sync.WaitGroup and spinner when finished
 	defer func() {
 		t.stop()
 		spinner.Stop()
-		fmt.Printf("\nTotal: %s sec \n", strconv.FormatFloat(time.Since(startTime).Seconds(), 'f', 2, 64))
+		fmt.Printf("\nClone: %s sec \nTemplating: %s sec\n", strconv.FormatFloat(cloneDuration, 'f', 2, 64),
+			strconv.FormatFloat(time.Since(startTimeTemplating).Seconds(), 'f', 2, 64),
+		)
 	}()
 
 	var templateData = struct {
