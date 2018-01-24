@@ -43,14 +43,14 @@ variables:
 - butler{ toSnakeCase "foo-bar" }
 
 ## Get survey results
-We generate getter functions to provide an easier access to survey results. If you set the name e.g to `name=database` to a question you can access the value with:
+We generate getter functions to provide an easier access to survey results. If you set the name e.g to `name=db` to a question you can access the value with:
 
 ```
-butler{getDatabase}
+butler{getDb}
 ```
 ## Conditions in templates
 ```
-butler{if eq getDatabase "mongodb"}
+butler{if eq getDb "mongodb"}
 // your template
 butler{end}
 ```
@@ -58,7 +58,7 @@ butler{end}
 ## Conditional directories and files
 Based on the survey you can decide which directories or files should be included or removed. The following example will include the folder when the question about the `database` will be answered with `mongodb`.
 ```
-Folder: {if eq getDatabase `mongodb` }mongodb{end}
+Folder: {if eq getDb `mongodb` }mongodb{end}
 ```
 Build the filename based on an answer:
 ```

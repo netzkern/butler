@@ -22,10 +22,15 @@ questions:
     message: "Choose a color:"
     options: ["red", "green", "yellow"]
   - type: multiselect
-    name: languages
-    message: "Choose your favorite programming languages:"
+    name: lang
+    message: "Choose your programming language:"
     options: ["c#", "go", "javascript"]
     default: ["c#"]
+  - type: select
+    name: db
+    message: "Choose your database:"
+    options: ["mongodb", "mssql", "redis"]
+    required: true
 ```
 
 **Configuration**
