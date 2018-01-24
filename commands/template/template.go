@@ -62,7 +62,7 @@ func New(options ...Option) *Templating {
 	v := &Templating{
 		excludedDirs: toMap(ExcludedDirs),
 		excludedExts: toMap(BinaryFileExt),
-		ch:           make(chan func()),
+		ch:           make(chan func(), runtime.NumCPU()),
 	}
 
 	for _, o := range options {
