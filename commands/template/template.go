@@ -249,22 +249,23 @@ func (t *Templating) Run() error {
 	}
 
 	tpl := t.getTemplateByName(t.project.Template)
-	var cloneDuration float64
+
+	if tpl == nil {
+		return fmt.Errorf("template %s could not be found", t.project.Template)
+	}
 
 	// clone repository
-	if tpl != nil {
-		startTimeClone := time.Now()
-		s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-		s.Suffix = "Cloning repository..."
-		s.Start()
-		err := t.cloneRepo(tpl.Url, t.project.Path)
-		s.Stop()
-		cloneDuration = time.Since(startTimeClone).Seconds()
-		if err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("template %s could not be found", t.project.Template)
+	var cloneDuration float64
+	startTimeClone := time.Now()
+	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	s.Suffix = "Cloning repository..."
+	s.Start()
+	err = t.cloneRepo(tpl.Url, t.project.Path)
+	s.Stop()
+	cloneDuration = time.Since(startTimeClone).Seconds()
+
+	if err != nil {
+		return err
 	}
 
 	surveyFile := path.Join(t.project.Path, t.configName)
