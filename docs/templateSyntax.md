@@ -43,7 +43,13 @@ We generate getter functions to provide an easier access to survey results. If y
 butler{getDatabase}
 ```
 
-## Conditions
+## Conditional directorys
+Based on the survey you can decide which folders should be included or removed. The following example will include the folder when the question with the name `database` will be answered with option with index `0`.
+```
+- butler{if eq getDatabase (index getDatabaseQuestion.Options 0) } mongodb butler{end}
+```
+
+## Conditions in templates
 ```
 butler{if eq getDatabase "mongodb"}
 
