@@ -322,65 +322,67 @@ func (t *Templating) Run() error {
 	renamings := make(map[string]string)
 
 	// iterate through all directorys
-	walkDirErr := filepath.Walk(t.project.Path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+	walkDirErr := filepath.Walk(
+		t.project.Path,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
 
-		// preserve files from processing
-		if !info.IsDir() {
-			return nil
-		}
+			// preserve files from processing
+			if !info.IsDir() {
+				return nil
+			}
 
-		skipFile, skipDirErr := t.Skip(path, info)
-		if skipFile {
-			return nil
-		}
-		if skipDirErr != nil {
-			return skipDirErr
-		}
+			skipFile, skipDirErr := t.Skip(path, info)
+			if skipFile {
+				return nil
+			}
+			if skipDirErr != nil {
+				return skipDirErr
+			}
 
-		ctx := logy.WithFields(logy.Fields{
-			"path": path,
-			"size": info.Size(),
-			"dir":  info.IsDir(),
-		})
+			ctx := logy.WithFields(logy.Fields{
+				"path": path,
+				"size": info.Size(),
+				"dir":  info.IsDir(),
+			})
 
-		// template directorys
-		t.ch <- func() {
+			// template directorys
+			t.ch <- func() {
 
-			defer func() {
-				if r := recover(); r != nil {
-					ctx.Error("directory templating error")
+				defer func() {
+					if r := recover(); r != nil {
+						ctx.Error("directory templating error")
+					}
+				}()
+
+				// Template directory
+				tplDir, err := template.New(path).
+					Delims(startDelim, endDelim).
+					Funcs(utilFuncMap).
+					Parse(info.Name())
+
+				if err != nil {
+					ctx.WithError(err).Error("create template for directory")
 				}
-			}()
 
-			// Template directory
-			tplDir, err := template.New(path).
-				Delims(startDelim, endDelim).
-				Funcs(utilFuncMap).
-				Parse(info.Name())
+				var dirNameBuffer bytes.Buffer
+				err = tplDir.Execute(&dirNameBuffer, templateData)
+				if err != nil {
+					ctx.WithError(err).Error("execute template for directory")
+				}
 
-			if err != nil {
-				ctx.WithError(err).Error("create template for directory")
+				newDirectory := dirNameBuffer.String()
+				newPath := filepath.Join(filepath.Dir(path), newDirectory)
+
+				if path != newPath {
+					renamings[path] = newPath
+				}
 			}
 
-			var dirNameBuffer bytes.Buffer
-			err = tplDir.Execute(&dirNameBuffer, templateData)
-			if err != nil {
-				ctx.WithError(err).Error("execute template for directory")
-			}
-
-			newDirectory := dirNameBuffer.String()
-			newPath := filepath.Join(filepath.Dir(path), newDirectory)
-
-			if path != newPath {
-				renamings[path] = newPath
-			}
-		}
-
-		return nil
-	})
+			return nil
+		})
 
 	if walkDirErr != nil {
 		return walkDirErr
@@ -393,104 +395,105 @@ func (t *Templating) Run() error {
 	}
 
 	// iterate through all files
-	walkErr := filepath.Walk(t.project.Path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+	walkErr := filepath.Walk(t.project.Path,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
 
-		skipFile, skipDirErr := t.Skip(path, info)
-		if skipFile {
-			ctx.Debug("skip file")
-			return nil
-		}
-		if skipDirErr != nil {
-			ctx.Debug("skip directory")
-			return skipDirErr
-		}
+			skipFile, skipDirErr := t.Skip(path, info)
+			if skipFile {
+				ctx.Debug("skip file")
+				return nil
+			}
+			if skipDirErr != nil {
+				ctx.Debug("skip directory")
+				return skipDirErr
+			}
 
-		// preserve directorys from processing
-		if info.IsDir() {
-			return nil
-		}
+			// preserve directorys from processing
+			if info.IsDir() {
+				return nil
+			}
 
-		ctx := logy.WithFields(logy.Fields{
-			"path": path,
-			"size": info.Size(),
-			"dir":  info.IsDir(),
-		})
+			ctx := logy.WithFields(logy.Fields{
+				"path": path,
+				"size": info.Size(),
+				"dir":  info.IsDir(),
+			})
 
-		// template file
-		t.ch <- func() {
+			// template file
+			t.ch <- func() {
 
-			defer func() {
-				if r := recover(); r != nil {
-					ctx.Error("templating error")
+				defer func() {
+					if r := recover(); r != nil {
+						ctx.Error("templating error")
+					}
+				}()
+
+				// Template filename
+				tplFilename, err := template.New(path).
+					Delims(startDelim, endDelim).
+					Funcs(utilFuncMap).
+					Parse(info.Name())
+
+				if err != nil {
+					ctx.WithError(err).Error("create template for filename")
+					return
 				}
-			}()
 
-			// Template filename
-			tplFilename, err := template.New(path).
-				Delims(startDelim, endDelim).
-				Funcs(utilFuncMap).
-				Parse(info.Name())
+				var filenameBuffer bytes.Buffer
+				err = tplFilename.Execute(&filenameBuffer, templateData)
+				if err != nil {
+					ctx.WithError(err).Error("execute template for filename")
+					return
+				}
 
-			if err != nil {
-				ctx.WithError(err).Error("create template for filename")
-				return
+				newFilename := filenameBuffer.String()
+				newPath := filepath.Join(filepath.Dir(path), newFilename)
+				dat, err := ioutil.ReadFile(path)
+
+				if err != nil {
+					ctx.WithError(err).Error("read")
+					return
+				}
+
+				// Template file content
+				tmpl, err := template.New(newPath).
+					Delims(startDelim, endDelim).
+					Funcs(utilFuncMap).
+					Parse(string(dat))
+
+				if err != nil {
+					ctx.WithError(err).Error("parse")
+					return
+				}
+
+				f, err := os.Create(newPath)
+
+				if err != nil {
+					ctx.WithError(err).Error("create")
+					return
+				}
+
+				defer f.Close()
+
+				err = tmpl.Execute(f, templateData)
+
+				if err != nil {
+					ctx.WithError(err).Error("template")
+					return
+				}
+
+				// remove old file when the name was changed
+				if path != newPath {
+					ctx.Debug("filename changed")
+					os.Remove(path)
+				}
 			}
 
-			var filenameBuffer bytes.Buffer
-			err = tplFilename.Execute(&filenameBuffer, templateData)
-			if err != nil {
-				ctx.WithError(err).Error("execute template for filename")
-				return
-			}
-
-			newFilename := filenameBuffer.String()
-			newPath := filepath.Join(filepath.Dir(path), newFilename)
-			dat, err := ioutil.ReadFile(path)
-
-			if err != nil {
-				ctx.WithError(err).Error("read")
-				return
-			}
-
-			// Template file content
-			tmpl, err := template.New(newPath).
-				Delims(startDelim, endDelim).
-				Funcs(utilFuncMap).
-				Parse(string(dat))
-
-			if err != nil {
-				ctx.WithError(err).Error("parse")
-				return
-			}
-
-			f, err := os.Create(newPath)
-
-			if err != nil {
-				ctx.WithError(err).Error("create")
-				return
-			}
-
-			defer f.Close()
-
-			err = tmpl.Execute(f, templateData)
-
-			if err != nil {
-				ctx.WithError(err).Error("template")
-				return
-			}
-
-			// remove old file when the name was changed
-			if path != newPath {
-				ctx.Debug("filename changed")
-				os.Remove(path)
-			}
-		}
-
-		return nil
-	})
+			return nil
+		})
 
 	if walkErr != nil {
 		return walkErr
