@@ -29,6 +29,11 @@ const (
 )
 
 var (
+	// preserve libs from corruptions
+	excludedExts = []string{
+		".dll",
+		".exe",
+	}
 	excludedDirs = []string{
 		"node_modules",
 		"bower_components",
@@ -57,8 +62,11 @@ type (
 		Variables    map[string]string
 		configName   string
 		excludedDirs map[string]struct{}
+		excludedExts map[string]struct{}
 		ch           chan func()
 		wg           sync.WaitGroup
+		surveyResult map[string]interface{}
+		project      *ProjectData
 	}
 )
 
@@ -69,6 +77,7 @@ type Option func(*Templating)
 func New(options ...Option) *Templating {
 	v := &Templating{
 		excludedDirs: toMap(excludedDirs),
+		excludedExts: toMap(excludedExts),
 		ch:           make(chan func()),
 	}
 
@@ -137,7 +146,7 @@ func (t *Templating) getTemplateOptions() []string {
 	return tpls
 }
 
-// GetQuestions return all fixed prompts
+// GetQuestions return all required prompts
 func (t *Templating) GetQuestions() []*survey.Question {
 	qs := []*survey.Question{
 		{
@@ -177,19 +186,84 @@ func (t *Templating) GetQuestions() []*survey.Question {
 	return qs
 }
 
-// Run the command
-func (t *Templating) Run() error {
+// Skip returns an error when a directory should be skipped or true with a file
+func (t *Templating) Skip(path string, info os.FileInfo) (bool, error) {
+	// ignore hidden dirs and files
+	if strings.HasPrefix(info.Name(), ".") {
+		if info.IsDir() {
+			return false, filepath.SkipDir
+		}
+		return true, nil
+	}
+
+	// skip blacklisted directories
+	if info.IsDir() {
+		_, ok := t.excludedDirs[info.Name()]
+		if ok {
+			return false, filepath.SkipDir
+		}
+	}
+
+	// skip blacklisted extensions
+	if !info.IsDir() {
+		_, ok := t.excludedExts[filepath.Ext(info.Name())]
+		if ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (t *Templating) startCommandSurvey() error {
 	var project = &ProjectData{}
 
+	// start command prompts
 	err := survey.Ask(t.GetQuestions(), project)
+	if err != nil {
+		return err
+	}
 
+	t.project = project
+
+	return nil
+}
+
+func (t *Templating) startTemplateSurvey(path string) error {
+	surveyResults := make(map[string]interface{})
+	surveys, err := ReadSurveyConfig(path)
+	if err == nil {
+		questions, err := BuildSurveys(surveys)
+		if err != nil {
+			logy.WithError(err).Error("build surveys")
+			return err
+		}
+
+		err = survey.Ask(questions, &surveyResults)
+
+		if err != nil {
+			logy.WithError(err).Error("start survey")
+			return err
+		}
+	}
+
+	t.surveyResult = surveyResults
+
+	logy.Debugf("Survey results %+v", surveyResults)
+
+	return nil
+}
+
+// Run the command
+func (t *Templating) Run() error {
+	err := t.startCommandSurvey()
 	if err != nil {
 		return err
 	}
 
 	startTime := time.Now()
 
-	tpl := t.getTemplateByName(project.Template)
+	tpl := t.getTemplateByName(t.project.Template)
 
 	// clone repository
 	if tpl != nil {
@@ -197,39 +271,24 @@ func (t *Templating) Run() error {
 		s.Suffix = "Cloning repository..."
 		s.FinalMSG = "Repository cloned!\n"
 		s.Start()
-		err := t.cloneRepo(tpl.Url, project.Path)
+		err := t.cloneRepo(tpl.Url, t.project.Path)
 		s.Stop()
 		if err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("template %s could not be found", project.Template)
+		return fmt.Errorf("template %s could not be found", t.project.Template)
 	}
 
-	surveyFile := path.Join(project.Path, t.configName)
+	surveyFile := path.Join(t.project.Path, t.configName)
 	ctx := logy.WithFields(logy.Fields{
 		"path": surveyFile,
 	})
 
-	// dynamic survey for the template
-	surveyResults := make(map[string]interface{})
-	surveys, err := ReadSurveyConfig(surveyFile)
-	if err == nil {
-		questions, err := BuildSurveys(surveys)
-		if err != nil {
-			ctx.WithError(err).Error("build surveys")
-			return err
-		}
-
-		err = survey.Ask(questions, &surveyResults)
-
-		if err != nil {
-			ctx.WithError(err).Error("start survey")
-			return err
-		}
+	err = t.startTemplateSurvey(surveyFile)
+	if err != nil {
+		return err
 	}
-
-	logy.Debugf("Survey results %+v", surveyResults)
 
 	// spinner progress
 	spinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
@@ -247,25 +306,130 @@ func (t *Templating) Run() error {
 		fmt.Printf("\nTotal: %s sec \n", strconv.FormatFloat(time.Since(startTime).Seconds(), 'f', 2, 64))
 	}()
 
-	walkErr := filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
+	var templateData = struct {
+		Project *ProjectData
+		Date    string
+		Year    int
+		Vars    map[string]string
+	}{
+		t.project,
+		time.Now().Format(time.RFC3339),
+		time.Now().Year(),
+		t.Variables,
+	}
+
+	utilFuncMap := template.FuncMap{
+		"toCamelCase":  casee.ToCamelCase,
+		"toPascalCase": casee.ToPascalCase,
+		"toSnakeCase":  casee.ToSnakeCase,
+		"join":         strings.Join,
+		"getSurveyResult": func(key string) interface{} {
+			val, ok := t.surveyResult[key]
+			if ok {
+				v, ok := val.(string)
+				if ok {
+					return v
+				}
+				return val
+			}
+			fmt.Printf("%+v, %v \n", val, ok)
+			ctx.Errorf("map access with key '%s' failed", key)
+
+			return val
+		},
+	}
+
+	renamings := make(map[string]string)
+
+	// iterate through all directorys
+	walkDirErr := filepath.Walk(t.project.Path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// ignore hidden dirs and files
-		if strings.HasPrefix(info.Name(), ".") {
-			if info.IsDir() {
-				return filepath.SkipDir
-			}
+		// preserve files from processing
+		if !info.IsDir() {
 			return nil
 		}
 
-		// skip blacklisted directories
-		if info.IsDir() {
-			_, ok := t.excludedDirs[info.Name()]
-			if ok {
-				return filepath.SkipDir
+		skipFile, skipDirErr := t.Skip(path, info)
+		if skipFile {
+			return nil
+		}
+		if skipDirErr != nil {
+			return skipDirErr
+		}
+
+		ctx := logy.WithFields(logy.Fields{
+			"path": path,
+			"size": info.Size(),
+			"dir":  info.IsDir(),
+		})
+
+		// template directorys
+		t.ch <- func() {
+
+			defer func() {
+				if r := recover(); r != nil {
+					ctx.Error("directory templating error")
+				}
+			}()
+
+			// Template directory
+			tplDir, err := template.New(path).
+				Delims(startDelim, endDelim).
+				Funcs(utilFuncMap).
+				Parse(info.Name())
+
+			if err != nil {
+				ctx.WithError(err).Error("create template for directory")
 			}
+
+			var dirNameBuffer bytes.Buffer
+			err = tplDir.Execute(&dirNameBuffer, templateData)
+			if err != nil {
+				ctx.WithError(err).Error("execute template for directory")
+			}
+
+			newDirectory := dirNameBuffer.String()
+			newPath := filepath.Join(filepath.Dir(path), newDirectory)
+
+			if path != newPath {
+				renamings[path] = newPath
+			}
+		}
+
+		return nil
+	})
+
+	if walkDirErr != nil {
+		return walkDirErr
+	}
+
+	// rename and remove dirs
+	for oldPath, newPath := range renamings {
+		os.Rename(oldPath, newPath)
+		os.RemoveAll(oldPath)
+	}
+
+	// iterate through all files
+	walkErr := filepath.Walk(t.project.Path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		skipFile, skipDirErr := t.Skip(path, info)
+		if skipFile {
+			ctx.Debug("skip file")
+			return nil
+		}
+		if skipDirErr != nil {
+			ctx.Debug("skip directory")
+			return skipDirErr
+		}
+
+		// preserve directorys from processing
+		if info.IsDir() {
 			return nil
 		}
 
@@ -275,62 +439,38 @@ func (t *Templating) Run() error {
 			"dir":  info.IsDir(),
 		})
 
-		var templateData = struct {
-			Project *ProjectData
-			Date    string
-			Year    int
-			Vars    map[string]string
-		}{
-			project,
-			time.Now().Format(time.RFC3339),
-			time.Now().Year(),
-			t.Variables,
-		}
-
 		// template file
 		t.ch <- func() {
-			ctx.Debugf("template")
 
-			utilFuncMap := template.FuncMap{
-				"toCamelCase":  casee.ToCamelCase,
-				"toPascalCase": casee.ToPascalCase,
-				"toSnakeCase":  casee.ToSnakeCase,
-				"join":         strings.Join,
-				"getSurveyResult": func(key string) interface{} {
-					val, ok := surveyResults[key]
-					if ok {
-						v, ok := val.(string)
-						if ok {
-							return v
-						}
-						return val
-					}
-					fmt.Printf("%+v, %v \n", val, ok)
-					ctx.Errorf("map access with key '%s' failed", key)
+			defer func() {
+				if r := recover(); r != nil {
+					ctx.Error("templating error")
+				}
+			}()
 
-					return val
-				},
-			}
-
-			tmplPath, err := template.New(path).
+			// Template filename
+			tplFilename, err := template.New(path).
 				Delims(startDelim, endDelim).
 				Funcs(utilFuncMap).
-				Parse(path)
+				Parse(info.Name())
 
 			if err != nil {
 				ctx.WithError(err).Error("create template for filename")
 				return
 			}
 
-			var pathBuffer bytes.Buffer
-			err = tmplPath.Execute(&pathBuffer, templateData)
+			var filenameBuffer bytes.Buffer
+			err = tplFilename.Execute(&filenameBuffer, templateData)
 			if err != nil {
-				ctx.WithError(err).Error("template for filename")
+				ctx.WithError(err).Error("execute template for filename")
 				return
 			}
 
-			newPath := pathBuffer.String()
+			newFilename := filenameBuffer.String()
+			newPath := filepath.Join(filepath.Dir(path), newFilename)
 			dat, err := ioutil.ReadFile(path)
+
+			// Template file content
 			tmpl, err := template.New(newPath).
 				Delims(startDelim, endDelim).
 				Funcs(utilFuncMap).
@@ -338,27 +478,23 @@ func (t *Templating) Run() error {
 
 			f, err := os.Create(newPath)
 
-			defer func() {
-				if r := recover(); r != nil {
-					ctx.Error("template error")
-				}
-			}()
-
 			defer f.Close()
 
 			if err != nil {
-				ctx.WithError(err).Error("read file")
+				ctx.WithError(err).Error("read")
 				return
 			}
 
 			err = tmpl.Execute(f, templateData)
 
 			if err != nil {
-				ctx.WithError(err).Error("template file")
+				ctx.WithError(err).Error("template")
 				return
 			}
 
+			// remove old file when the name was changed
 			if path != newPath {
+				ctx.Debug("filename changed")
 				os.Remove(path)
 			}
 		}
