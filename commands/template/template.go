@@ -28,26 +28,6 @@ const (
 	endDelim   = "}"
 )
 
-var (
-	// preserve libs from corruptions
-	excludedExts = []string{
-		".dll",
-		".exe",
-	}
-	excludedDirs = []string{
-		"node_modules",
-		"bower_components",
-		"jspm_packages",
-		"dist",
-		"build",
-		"log",
-		"logs",
-		"bin",
-		"lib",
-		"typings",
-	}
-)
-
 type (
 	// ProjectData contains all project data
 	ProjectData struct {
@@ -76,8 +56,8 @@ type Option func(*Templating)
 // New with the given options.
 func New(options ...Option) *Templating {
 	v := &Templating{
-		excludedDirs: toMap(excludedDirs),
-		excludedExts: toMap(excludedExts),
+		excludedDirs: toMap(ExcludedDirs),
+		excludedExts: toMap(BinaryFileExt),
 		ch:           make(chan func()),
 	}
 
@@ -206,7 +186,7 @@ func (t *Templating) Skip(path string, info os.FileInfo) (bool, error) {
 
 	// skip blacklisted extensions
 	if !info.IsDir() {
-		_, ok := t.excludedExts[filepath.Ext(info.Name())]
+		_, ok := t.excludedExts[filepath.Ext("."+info.Name())]
 		if ok {
 			return true, nil
 		}
@@ -470,20 +450,30 @@ func (t *Templating) Run() error {
 			newPath := filepath.Join(filepath.Dir(path), newFilename)
 			dat, err := ioutil.ReadFile(path)
 
+			if err != nil {
+				ctx.WithError(err).Error("read")
+				return
+			}
+
 			// Template file content
 			tmpl, err := template.New(newPath).
 				Delims(startDelim, endDelim).
 				Funcs(utilFuncMap).
 				Parse(string(dat))
 
-			f, err := os.Create(newPath)
-
-			defer f.Close()
-
 			if err != nil {
-				ctx.WithError(err).Error("read")
+				ctx.WithError(err).Error("parse")
 				return
 			}
+
+			f, err := os.Create(newPath)
+
+			if err != nil {
+				ctx.WithError(err).Error("create")
+				return
+			}
+
+			defer f.Close()
 
 			err = tmpl.Execute(f, templateData)
 
