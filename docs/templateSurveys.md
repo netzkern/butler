@@ -5,9 +5,9 @@ Your are able to create an interactive survey before your template is proceed. T
 ## How to create a survey?
 
 1. Create a config file `butler-survey.yml` in the root directory of the template repository.
-2. Create options based on the format below.
-3. [Use](/docs/templateSyntax.md#get-survey-results) the answers in your template.
-4. Run butler and select your template.
+2. Create questions based on the format below.
+3. Build your template with easy to use [use](/docs/templateSyntax.md#get-survey-results) template syntax.
+4. Run butler and create your new project.
 
 **butler-survey.yml**
 ```yml
