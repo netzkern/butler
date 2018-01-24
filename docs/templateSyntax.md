@@ -19,31 +19,33 @@ For directory or file names you have to use a different delimiter to save charac
 - Directories
 - Text files (.html, .md, .txt, .cshtml, .cs, .js ...)
 
-## Custom variables
-You can specify custom variables in the `butler.yml` file. They can be accessed by `butler{ .Vars.company }`.
+# Built in
+
+## Project details
+- `butler{ .Project.Name }` Return the project name
+- `butler{ .Project.Description }` Return the project description
+- `butler{ .Date }` Return the date (RFC3339)
+- `butler{ .Year }` Return the year (4-digits)
+
+## Define custom variables
+You can specify custom variables in the `butler.yml` file.
 
 ```yaml
 variables:
   company: netzkern
   email: info@netzkern.de
 ```
-
-## Default variables
-- Project name: butler{ .Project.Name }
-- Project Description: butler{ .Project.Description }
-- Current Date: butler{ .Date }
-- Current Year: butler{ .Year }
-
-## Define custom variables
-- Company: butler{ .Vars.company }
-- Email: butler{ .Vars.email }
+Usage:
+```
+butler{ .Vars.company }
+```
 
 ## Helper functions
-- butler{ toCamelCase .Project.Name }
-- butler{ toPascalCase "foo-bar" }
-- butler{ toSnakeCase "foo-bar" }
-- butler{ toPascalCase "foo-bar" }
-- butler{ print uuid }
+- `butler{ toCamelCase .Project.Name }` Return the project name in camel-case.
+- `butler{ toPascalCase "foo-bar" }` Return the project name in pascal-case.
+- `butler{ toSnakeCase "foo-bar" }` Return "foo-bar" in snake-case.
+- `butler{ toPascalCase "foo-bar" }` Return "foo-bar" in pascal-case.
+- `butler{ print uuid }` Return a random UUID Version 4.
 
 ## Define variables in templates
 ```
