@@ -37,13 +37,15 @@ variables:
 - butler{ toSnakeCase "foo-bar" }
 
 ## Get survey results
+We generate getter functions to provide an easier access to survey results. If you set the name e.g to `name=database` to a question you can access the value with:
+
 ```
-butler{getSurveyResult "database"}
+butler{getDatabase}
 ```
 
 ## Conditions
 ```
-butler{if eq (getSurveyResult "database") "mongodb"}
+butler{if eq getDatabase "mongodb"}
 
 butler{end}
 ```

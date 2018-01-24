@@ -303,23 +303,19 @@ func (t *Templating) Run() error {
 		"toPascalCase": casee.ToPascalCase,
 		"toSnakeCase":  casee.ToSnakeCase,
 		"join":         strings.Join,
-		"getSurveyResult": func(key string) interface{} {
-			val, ok := t.surveyResult[key]
-			if ok {
-				v, ok := val.(string)
-				if ok {
-					return v
-				}
-				return val
-			}
-			fmt.Printf("%+v, %v \n", val, ok)
-			ctx.Errorf("map access with key '%s' failed", key)
+	}
 
-			return val
-		},
+	// create getter functions for the survey results for easier access
+	for key, val := range t.surveyResult {
+		utilFuncMap["get"+casee.ToPascalCase(key)] = (func(v interface{}) func() interface{} {
+			return func() interface{} {
+				return v
+			}
+		})(val)
 	}
 
 	renamings := make(map[string]string)
+	removings := []string{}
 
 	// iterate through all directorys
 	walkDirErr := filepath.Walk(
@@ -376,7 +372,9 @@ func (t *Templating) Run() error {
 				newDirectory := dirNameBuffer.String()
 				newPath := filepath.Join(filepath.Dir(path), newDirectory)
 
-				if path != newPath {
+				if strings.TrimSpace(newPath) == "" {
+					removings = append(removings, newPath)
+				} else if path != newPath {
 					renamings[path] = newPath
 				}
 			}
@@ -392,6 +390,10 @@ func (t *Templating) Run() error {
 	for oldPath, newPath := range renamings {
 		os.Rename(oldPath, newPath)
 		os.RemoveAll(oldPath)
+	}
+
+	for _, path := range removings {
+		os.RemoveAll(path)
 	}
 
 	// iterate through all files
