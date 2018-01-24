@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	startDelim = "butler{"
-	endDelim   = "}"
+	startContentDelim = "butler{"
+	endContentDelim   = "}"
 
 	startNameDelim = "{"
 	endNameDelim   = "}"
@@ -53,11 +53,6 @@ type (
 		surveys      *Survey
 	}
 )
-
-type SafeStringArr struct {
-	sync.Mutex
-	a []string
-}
 
 // Option function.
 type Option func(*Templating)
@@ -492,7 +487,7 @@ func (t *Templating) Run() error {
 
 				// Template file content
 				tmpl, err := template.New(newPath).
-					Delims(startDelim, endDelim).
+					Delims(startContentDelim, endContentDelim).
 					Funcs(utilFuncMap).
 					Parse(string(dat))
 
