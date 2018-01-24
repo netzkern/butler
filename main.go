@@ -18,7 +18,7 @@ const (
 	debug          = false
 	trace          = false
 	appName        = "Butler"
-	appDesc        = "Welcome to Butler🤵, your personal assistent to scaffolding your projects.\n"
+	appDesc        = "Welcome to Butler🤵, your personal assistent to scaffold new projects.\n"
 	author         = "netzkern AG"
 	repository     = "netzkern/butler"
 	surveyFilename = "butler-survey.yml"
@@ -97,7 +97,7 @@ func interactiveCliMode() {
 func cliMode() {
 	app := cli.NewApp()
 	app.Name = appName
-	app.Usage = "your personal assistent to scaffolding your projects."
+	app.Usage = "your personal assistent to scaffold new projects."
 	app.Author = author
 	app.Version = version
 	app.Description = appDesc

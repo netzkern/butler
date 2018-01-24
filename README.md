@@ -2,7 +2,7 @@
 <img src="https://raw.githubusercontent.com/netzkern/butler/master/logo.png" alt="butler" style="max-width:100%;">
 </p>
 
-Butler is an automatation tool to bootstrap a project in only a few seconds. We provide a powerful interactive cli.
+Butler is an automatation tool to scaffold new projects in only a few seconds. We provide a powerful interactive cli.
 When you create a project template you can create a [`Survey`](/docs/templateSurveys.md). Surveys are used to collect informations from the users to generate individual templates. Beside templating we also plan to integrate common tasks of popular project managents tools like Jira, Confuence in Butler.
 
 ## Usage
