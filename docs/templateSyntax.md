@@ -54,7 +54,7 @@ butler{$id} // print id
 ```
 
 ## Get survey results
-We generate getter functions to provide an easier access to survey results. If you set the name e.g to `name=db` to a question you can access the value with:
+We generate getter functions to provide an easier access to survey results. If you set the name e.g to `name: db` of a question you can access the value with:
 
 ```
 butler{getDb}
