@@ -26,6 +26,9 @@ import (
 const (
 	startDelim = "butler{"
 	endDelim   = "}"
+
+	startNameDelim = "{"
+	endNameDelim   = "}"
 )
 
 type (
@@ -50,6 +53,11 @@ type (
 		surveys      *Survey
 	}
 )
+
+type SafeStringArr struct {
+	sync.Mutex
+	a []string
+}
 
 // Option function.
 type Option func(*Templating)
@@ -327,8 +335,8 @@ func (t *Templating) Run() error {
 		})(question)
 	}
 
-	renamings := make(map[string]string)
-	removings := []string{}
+	renamings := map[string]string{}
+	dirRemovings := []string{}
 
 	// iterate through all directorys
 	walkDirErr := filepath.Walk(
@@ -357,41 +365,37 @@ func (t *Templating) Run() error {
 				"dir":  info.IsDir(),
 			})
 
-			// template directorys
-			t.ch <- func() {
-
-				defer func() {
-					if r := recover(); r != nil {
-						ctx.Error("directory templating error")
-					}
-				}()
-
-				// Template directory
-				tplDir, err := template.New(path).
-					Delims(startDelim, endDelim).
-					Funcs(utilFuncMap).
-					Parse(info.Name())
-
-				if err != nil {
-					ctx.WithError(err).Error("create template for directory")
+			defer func() {
+				if r := recover(); r != nil {
+					ctx.Error("directory templating error")
 				}
+			}()
 
-				var dirNameBuffer bytes.Buffer
-				err = tplDir.Execute(&dirNameBuffer, templateData)
-				if err != nil {
-					ctx.WithError(err).Error("execute template for directory")
-				}
+			// Template directory
+			tplDir, err := template.New(path).
+				Delims(startNameDelim, endNameDelim).
+				Funcs(utilFuncMap).
+				Parse(info.Name())
 
-				newDirectory := dirNameBuffer.String()
-				newPath := filepath.Join(filepath.Dir(path), newDirectory)
+			if err != nil {
+				ctx.WithError(err).Error("create template for directory")
+			}
 
-				// when directory contains a condition
-				// order is irrelevant
-				if strings.TrimSpace(newPath) == "" {
-					removings = append(removings, newPath)
-				} else if path != newPath {
-					renamings[path] = newPath
-				}
+			var dirNameBuffer bytes.Buffer
+			err = tplDir.Execute(&dirNameBuffer, templateData)
+			if err != nil {
+				ctx.WithError(err).Error("execute template for directory")
+			}
+
+			newDirectory := dirNameBuffer.String()
+			newPath := filepath.Join(filepath.Dir(path), newDirectory)
+
+			// when directory contains a condition
+			// order is irrelevant
+			if strings.TrimSpace(newPath) == "" {
+				dirRemovings = append(dirRemovings, newPath)
+			} else if path != newPath {
+				renamings[path] = newPath
 			}
 
 			return nil
@@ -408,11 +412,9 @@ func (t *Templating) Run() error {
 	}
 
 	// remove directories which are evaluated to empty string
-	for _, path := range removings {
+	for _, path := range dirRemovings {
 		os.RemoveAll(path)
 	}
-
-	removings = []string{}
 
 	// iterate through all files
 	walkErr := filepath.Walk(t.project.Path,
@@ -453,7 +455,7 @@ func (t *Templating) Run() error {
 
 				// Template filename
 				tplFilename, err := template.New(path).
-					Delims(startDelim, endDelim).
+					Delims(startNameDelim, endNameDelim).
 					Funcs(utilFuncMap).
 					Parse(info.Name())
 
@@ -473,9 +475,11 @@ func (t *Templating) Run() error {
 				newPath := filepath.Join(filepath.Dir(path), newFilename)
 
 				// when filename contains a condition
-				// append order is irrelevant
 				if strings.TrimSpace(newPath) == "" {
-					removings = append(removings, newPath)
+					err := os.Remove(path)
+					if err != nil {
+						ctx.WithError(err).Error("delete")
+					}
 					return
 				}
 
@@ -525,11 +529,6 @@ func (t *Templating) Run() error {
 
 	if walkErr != nil {
 		return walkErr
-	}
-
-	// remove files which are evaluated to empty string
-	for _, path := range removings {
-		os.RemoveAll(path)
 	}
 
 	return nil
