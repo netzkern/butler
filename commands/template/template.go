@@ -52,6 +52,13 @@ type (
 		project      *ProjectData
 		surveys      *Survey
 	}
+	// Data basic template data
+	TemplateData struct {
+		Project *ProjectData
+		Date    string
+		Year    int
+		Vars    map[string]string
+	}
 )
 
 // Option function.
@@ -241,6 +248,35 @@ func (t *Templating) startTemplateSurvey(path string) error {
 	return nil
 }
 
+func (t *Templating) generateTempFuncs() template.FuncMap {
+	utilFuncMap := template.FuncMap{
+		"toCamelCase":  casee.ToCamelCase,
+		"toPascalCase": casee.ToPascalCase,
+		"toSnakeCase":  casee.ToSnakeCase,
+		"join":         strings.Join,
+	}
+
+	// create getter functions for the survey results for easier access
+	for key, val := range t.surveyResult {
+		utilFuncMap["get"+casee.ToPascalCase(key)] = (func(v interface{}) func() interface{} {
+			return func() interface{} {
+				return v
+			}
+		})(val)
+	}
+
+	// create getter functions for the survey options for easier access
+	for _, question := range t.surveys.Questions {
+		utilFuncMap["get"+casee.ToPascalCase(question.Name+"Question")] = (func(v Question) func() interface{} {
+			return func() interface{} {
+				return question
+			}
+		})(question)
+	}
+
+	return utilFuncMap
+}
+
 // Run the command
 func (t *Templating) Run() error {
 	err := t.startCommandSurvey()
@@ -296,42 +332,14 @@ func (t *Templating) Run() error {
 		)
 	}()
 
-	var templateData = struct {
-		Project *ProjectData
-		Date    string
-		Year    int
-		Vars    map[string]string
-	}{
+	templateData := &TemplateData{
 		t.project,
 		time.Now().Format(time.RFC3339),
 		time.Now().Year(),
 		t.Variables,
 	}
 
-	utilFuncMap := template.FuncMap{
-		"toCamelCase":  casee.ToCamelCase,
-		"toPascalCase": casee.ToPascalCase,
-		"toSnakeCase":  casee.ToSnakeCase,
-		"join":         strings.Join,
-	}
-
-	// create getter functions for the survey results for easier access
-	for key, val := range t.surveyResult {
-		utilFuncMap["get"+casee.ToPascalCase(key)] = (func(v interface{}) func() interface{} {
-			return func() interface{} {
-				return v
-			}
-		})(val)
-	}
-
-	// create getter functions for the survey options for easier access
-	for _, question := range t.surveys.Questions {
-		utilFuncMap["get"+casee.ToPascalCase(question.Name+"Question")] = (func(v Question) func() interface{} {
-			return func() interface{} {
-				return question
-			}
-		})(question)
-	}
+	utilFuncMap := t.generateTempFuncs()
 
 	renamings := map[string]string{}
 	dirRemovings := []string{}
