@@ -19,6 +19,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/netzkern/butler/config"
 	"github.com/pinzolo/casee"
+	uuid "github.com/satori/go.uuid"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
 )
@@ -254,6 +255,14 @@ func (t *Templating) generateTempFuncs() template.FuncMap {
 		"toPascalCase": casee.ToPascalCase,
 		"toSnakeCase":  casee.ToSnakeCase,
 		"join":         strings.Join,
+	}
+
+	utilFuncMap["uuid"] = func() (string, error) {
+		ui, err := uuid.NewV4()
+		if err != nil {
+			return "", err
+		}
+		return ui.String(), nil
 	}
 
 	// create getter functions for the survey results for easier access
