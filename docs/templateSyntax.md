@@ -4,8 +4,13 @@ We use the template engine from Go. [Here](https://golang.org/pkg/text/template/
 
 ## Delimiter
 
+Inside files you have to use:
 ```
 butler{<expr>} 
+```
+For directory or file names you have to use:
+```
+{<expr>} 
 ```
 
 ## Where can I use templates?
@@ -42,21 +47,19 @@ We generate getter functions to provide an easier access to survey results. If y
 ```
 butler{getDatabase}
 ```
-
-## Conditional directories and files
-Based on the survey you can decide which directories or files should be included or removed. The following example will include the folder when the question about the `database` will be answered with `mongodb`.
-```
-butler{if eq getDatabase `mongodb` } mongodb butler{end}
-butler{if eq getDatabase (index getDatabaseQuestion.Options 0) } mongodb butler{end}
-```
-Build the filename based on a answer:
-```
-butler{print getColor `.md`}
-```
-
 ## Conditions in templates
 ```
 butler{if eq getDatabase "mongodb"}
 // your template
 butler{end}
+```
+
+## Conditional directories and files
+Based on the survey you can decide which directories or files should be included or removed. The following example will include the folder when the question about the `database` will be answered with `mongodb`.
+```
+{if eq getDatabase `mongodb` }mongodb{end}
+```
+Build the filename based on an answer:
+```
+{print getColor `.md`}
 ```
