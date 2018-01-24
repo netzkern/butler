@@ -8,10 +8,11 @@ Inside files you have to use:
 ```
 butler{<expr>} 
 ```
-For directory or file names you have to use:
+For directory or file names you have to use a different delimiter to save character because windows has a path [limit](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx). We recommend to use short question names in the `survey-butler.yml`.
 ```
 {<expr>} 
 ```
+
 
 ## Where can I use templates?
 - Filenames
