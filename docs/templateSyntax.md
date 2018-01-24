@@ -36,6 +36,7 @@ variables:
 ## Custom variables
 - Company: butler{ .Vars.company }
 - Email: butler{ .Vars.email }
+
 ## Helper functions
 - butler{ toCamelCase .Project.Name }
 - butler{ toPascalCase "foo-bar" }
@@ -57,9 +58,9 @@ butler{end}
 ## Conditional directories and files
 Based on the survey you can decide which directories or files should be included or removed. The following example will include the folder when the question about the `database` will be answered with `mongodb`.
 ```
-{if eq getDatabase `mongodb` }mongodb{end}
+Folder: {if eq getDatabase `mongodb` }mongodb{end}
 ```
 Build the filename based on an answer:
 ```
-{print getColor `.md`}
+Filename: {print getColor `.md`}
 ```
