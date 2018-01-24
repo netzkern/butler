@@ -100,6 +100,8 @@ func (t *Templating) cloneRepo(repoURL string, dest string) error {
 		return fmt.Errorf("respository already exists. Remove '%s' directory", dest)
 	}
 
+	os.RemoveAll(filepath.Join(dest, ".git"))
+
 	return err
 }
 
