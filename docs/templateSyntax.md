@@ -48,6 +48,9 @@ Based on the survey you can decide which directories or files should be included
 ```
 butler{if eq getDatabase `mongodb` } mongodb butler{end}
 butler{if eq getDatabase (index getDatabaseQuestion.Options 0) } mongodb butler{end}
+```
+Build the filename based on a answer:
+```
 butler{print getColor `.md`}
 ```
 
