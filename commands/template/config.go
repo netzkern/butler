@@ -17,8 +17,14 @@ type Question struct {
 	Help     string      `json:"help"`
 }
 
+type Hook struct {
+	Cmd  string   `json:"cmd"`
+	Args []string `json:"args"`
+}
+
 type Survey struct {
-	Questions []Question `json:"questions"`
+	Questions  []Question `yaml:"questions"`
+	AfterHooks []Hook     `yaml:"afterHooks"`
 }
 
 // ReadSurveyConfig reads the config and return a new survey
@@ -31,6 +37,7 @@ func ReadSurveyConfig(path string) (*Survey, error) {
 	}
 
 	err = yaml.Unmarshal(dat, &survey)
+
 	if err != nil {
 		logy.Errorf("could not unmarshal %s", err.Error())
 		return survey, err

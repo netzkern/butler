@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -563,6 +565,20 @@ func (t *Templating) Run() error {
 	if err != nil {
 		logy.WithError(err).Error("Could not create git hooks")
 		return err
+	}
+
+	// run after hooks
+	for i, hook := range t.surveys.AfterHooks {
+		logy.Debugf("Run cmd %s with %v", hook.Cmd, hook.Args)
+		cmd := exec.Command(hook.Cmd, hook.Args...)
+		cmd.Dir = path.Clean(t.CommandData.Path)
+		cmd.Stdout = os.Stdout
+		cmd.Stdin = os.Stdin
+		err := cmd.Run()
+		if err != nil {
+			logy.WithError(err).Errorf("Command %d ('%s') could not be executed", i, hook.Cmd)
+			log.Fatal(err)
+		}
 	}
 
 	return nil

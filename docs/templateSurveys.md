@@ -31,9 +31,16 @@ questions:
     message: "Choose your database:"
     options: ["mongodb", "mssql", "redis"]
     required: true
+
+# Are executed after the project was created completly.
+afterHooks:
+  - cmd: node
+    args: ["v"]
 ```
 
-**Configuration**
+### Configuration
+
+#### Questions
 - type: input, select, multiselect `string`
 - name: the indentifier of your question to access it in your template `string`
 - message: the question or statement `string`
@@ -41,3 +48,7 @@ questions:
 - default: depends on the type `string` for select and `[]string` for multiselect questions
 - required: `boolean`
 - help: `string`
+
+#### afterHooks
+- cmd: command to execute `string`
+- args: arguments `[]string`
