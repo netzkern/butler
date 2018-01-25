@@ -647,9 +647,7 @@ func mapToEnvArray(s map[string]interface{}, prefix string) []string {
 		envName := strings.ToUpper(name)
 		switch v := a.(type) {
 		case []string:
-			for index, n := range v {
-				array = append(array, fmt.Sprintf("%s_%s_%d=%s", prefix, envName, index, n))
-			}
+			array = append(array, fmt.Sprintf("%s_%s=%s", prefix, envName, strings.Join(v, ",")))
 		case string:
 			array = append(array, fmt.Sprintf("%s_%s=%s", prefix, envName, a))
 		}

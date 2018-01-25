@@ -61,6 +61,6 @@ All results are available via environment variables:
 ```
 BUTLER_DRINK=dwe
 BUTLER_COLOR=red
-BUTLER_LANG_0=c#
+BUTLER_LANG=c#,go,javascript
 BUTLER_DB=mongodb
 ```
