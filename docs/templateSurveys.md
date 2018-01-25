@@ -36,6 +36,7 @@ questions:
 afterHooks:
   - cmd: node
     args: ["v"]
+    enabled: eq getDb "mongodb"
 ```
 
 ### Configuration
@@ -49,6 +50,17 @@ afterHooks:
 - required: `boolean`
 - help: `string`
 
-#### afterHooks
+#### After hooks
 - cmd: command to execute `string`
 - args: arguments `[]string`
+- enabled: a template expression
+
+## Access survey results in hook scripts
+
+All results are available via environment variables:
+```
+BUTLER_DRINK=dwe
+BUTLER_COLOR=red
+BUTLER_LANG_0=c#
+BUTLER_DB=mongodb
+```

@@ -18,8 +18,9 @@ type Question struct {
 }
 
 type Hook struct {
-	Cmd  string   `json:"cmd"`
-	Args []string `json:"args"`
+	Cmd     string   `json:"cmd"`
+	Args    []string `json:"args"`
+	Enabled string   `json:"enabled"`
 }
 
 type Survey struct {

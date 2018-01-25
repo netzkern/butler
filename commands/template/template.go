@@ -33,6 +33,8 @@ const (
 
 	startNameDelim = "{"
 	endNameDelim   = "}"
+
+	envPrefix = "BUTLER"
 )
 
 type (
@@ -45,16 +47,18 @@ type (
 	}
 	// Templating command
 	Templating struct {
-		Templates    []config.Template
-		Variables    map[string]string
-		configName   string
-		excludedDirs map[string]struct{}
-		excludedExts map[string]struct{}
-		ch           chan func()
-		wg           sync.WaitGroup
-		surveyResult map[string]interface{}
-		CommandData  *CommandData
-		surveys      *Survey
+		Templates       []config.Template
+		Variables       map[string]string
+		configName      string
+		excludedDirs    map[string]struct{}
+		excludedExts    map[string]struct{}
+		ch              chan func()
+		wg              sync.WaitGroup
+		surveyResult    map[string]interface{}
+		CommandData     *CommandData
+		TemplateData    *TemplateData
+		templateFuncMap template.FuncMap
+		surveys         *Survey
 	}
 	// TemplateData basic template data
 	TemplateData struct {
@@ -260,7 +264,49 @@ func (t *Templating) startTemplateSurvey(path string) error {
 	return nil
 }
 
-func (t *Templating) generateTempFuncs() template.FuncMap {
+// runSurveyTemplateHooks run all template hooks
+func (t *Templating) runSurveyTemplateHooks() {
+	for i, hook := range t.surveys.AfterHooks {
+		ctx := logy.WithFields(logy.Fields{
+			"cmd":  hook.Cmd,
+			"args": hook.Args,
+		})
+
+		// check if cmd should be run
+		if strings.TrimSpace(hook.Enabled) != "" {
+			tpl, err := template.New(hook.Cmd).
+				Delims("{", "}").
+				Funcs(t.templateFuncMap).
+				Parse("{if " + hook.Enabled + "}true{end}")
+
+			if err != nil {
+				ctx.WithError(err).Error("create template")
+			}
+
+			var buf bytes.Buffer
+			tpl.Execute(&buf, t.TemplateData)
+			if buf.String() != "true" {
+				continue
+			}
+			ctx.Debug("skipped")
+		}
+
+		cmd := exec.Command(hook.Cmd, hook.Args...)
+		cmd.Dir = path.Clean(t.CommandData.Path)
+		// inherit process env
+		cmd.Env = append(mapToEnvArray(t.surveyResult, envPrefix), os.Environ()...)
+		cmd.Stdout = os.Stdout
+		cmd.Stdin = os.Stdin
+		err := cmd.Run()
+		if err != nil {
+			logy.WithError(err).Errorf("Command %d ('%s') could not be executed", i, hook.Cmd)
+			log.Fatal(err)
+		}
+	}
+}
+
+// generateTempFuncs create helper funcs and getters based on the survey result
+func (t *Templating) generateTempFuncs() {
 	utilFuncMap := template.FuncMap{
 		"toCamelCase":  casee.ToCamelCase,
 		"toPascalCase": casee.ToPascalCase,
@@ -294,7 +340,7 @@ func (t *Templating) generateTempFuncs() template.FuncMap {
 		})(question)
 	}
 
-	return utilFuncMap
+	t.templateFuncMap = utilFuncMap
 }
 
 // Run the command
@@ -347,14 +393,14 @@ func (t *Templating) Run() error {
 		)
 	}()
 
-	templateData := &TemplateData{
+	t.TemplateData = &TemplateData{
 		t.CommandData,
 		time.Now().Format(time.RFC3339),
 		time.Now().Year(),
 		t.Variables,
 	}
 
-	utilFuncMap := t.generateTempFuncs()
+	t.generateTempFuncs()
 
 	renamings := map[string]string{}
 	dirRemovings := []string{}
@@ -395,7 +441,7 @@ func (t *Templating) Run() error {
 			// Template directory
 			tplDir, err := template.New(path).
 				Delims(startNameDelim, endNameDelim).
-				Funcs(utilFuncMap).
+				Funcs(t.templateFuncMap).
 				Parse(info.Name())
 
 			if err != nil {
@@ -403,7 +449,7 @@ func (t *Templating) Run() error {
 			}
 
 			var dirNameBuffer bytes.Buffer
-			err = tplDir.Execute(&dirNameBuffer, templateData)
+			err = tplDir.Execute(&dirNameBuffer, t.TemplateData)
 			if err != nil {
 				ctx.WithError(err).Error("execute template for directory")
 			}
@@ -477,7 +523,7 @@ func (t *Templating) Run() error {
 				// Template filename
 				tplFilename, err := template.New(path).
 					Delims(startNameDelim, endNameDelim).
-					Funcs(utilFuncMap).
+					Funcs(t.templateFuncMap).
 					Parse(info.Name())
 
 				if err != nil {
@@ -486,7 +532,7 @@ func (t *Templating) Run() error {
 				}
 
 				var filenameBuffer bytes.Buffer
-				err = tplFilename.Execute(&filenameBuffer, templateData)
+				err = tplFilename.Execute(&filenameBuffer, t.TemplateData)
 				if err != nil {
 					ctx.WithError(err).Error("execute template for filename")
 					return
@@ -514,7 +560,7 @@ func (t *Templating) Run() error {
 				// Template file content
 				tmpl, err := template.New(newPath).
 					Delims(startContentDelim, endContentDelim).
-					Funcs(utilFuncMap).
+					Funcs(t.templateFuncMap).
 					Parse(string(dat))
 
 				if err != nil {
@@ -531,7 +577,7 @@ func (t *Templating) Run() error {
 
 				defer f.Close()
 
-				err = tmpl.Execute(f, templateData)
+				err = tmpl.Execute(f, t.TemplateData)
 
 				if err != nil {
 					ctx.WithError(err).Error("template")
@@ -567,19 +613,7 @@ func (t *Templating) Run() error {
 		return err
 	}
 
-	// run after hooks
-	for i, hook := range t.surveys.AfterHooks {
-		logy.Debugf("Run cmd %s with %v", hook.Cmd, hook.Args)
-		cmd := exec.Command(hook.Cmd, hook.Args...)
-		cmd.Dir = path.Clean(t.CommandData.Path)
-		cmd.Stdout = os.Stdout
-		cmd.Stdin = os.Stdin
-		err := cmd.Run()
-		if err != nil {
-			logy.WithError(err).Errorf("Command %d ('%s') could not be executed", i, hook.Cmd)
-			log.Fatal(err)
-		}
-	}
+	t.runSurveyTemplateHooks()
 
 	return nil
 }
@@ -604,6 +638,23 @@ func (t *Templating) start() {
 func (t *Templating) stop() {
 	close(t.ch)
 	t.wg.Wait()
+}
+
+func mapToEnvArray(s map[string]interface{}, prefix string) []string {
+	prefix = strings.ToUpper(prefix)
+	array := []string{}
+	for name, a := range s {
+		envName := strings.ToUpper(name)
+		switch v := a.(type) {
+		case []string:
+			for index, n := range v {
+				array = append(array, fmt.Sprintf("%s_%s_%d=%s", prefix, envName, index, n))
+			}
+		case string:
+			array = append(array, fmt.Sprintf("%s_%s=%s", prefix, envName, a))
+		}
+	}
+	return array
 }
 
 // toMap returns a map from slice.
