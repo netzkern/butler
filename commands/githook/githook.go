@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	// Hooks a list of all available git hooks
 	Hooks = []string{
 		"applypatch-msg",
 		"commit-msg",
