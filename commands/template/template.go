@@ -102,6 +102,13 @@ func WithTemplates(s []config.Template) Option {
 	}
 }
 
+// WithCommandData option.
+func WithCommandData(cd *CommandData) Option {
+	return func(t *Templating) {
+		t.CommandData = cd
+	}
+}
+
 // cloneRepo clone a repo to the dst
 func (t *Templating) cloneRepo(repoURL string, dest string) error {
 	_, err := git.PlainClone(dest, false, &git.CloneOptions{
