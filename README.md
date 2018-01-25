@@ -15,11 +15,13 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 * <a href="/docs/templateSurveys.md"><code><b>Template Surveys</b></code></a>
 * <a href="/docs/templateSyntax.md"><code><b>Template Syntax</b></code></a>
+* <a href="/docs/gitHooks.md"><code><b>Git Hooks</b></code></a>
 * <a href="#commands"><code><b>Commands</b></code></a>
 
 ## Commands
 
 - **Project Templates:** This command will create a new project based on the selected template.
+- **Install Git Hooks:** This command will install all hooks from the folder `git_hooks` as hard links.
 
 ## Maintenance
 
