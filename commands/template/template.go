@@ -210,7 +210,8 @@ func (t *Templating) Skip(path string, info os.FileInfo) (bool, error) {
 	return false, nil
 }
 
-func (t *Templating) startCommandSurvey() error {
+// StartCommandSurvey collect all required informations from user
+func (t *Templating) StartCommandSurvey() error {
 	var cd = &CommandData{}
 
 	// start command prompts
@@ -289,13 +290,6 @@ func (t *Templating) generateTempFuncs() template.FuncMap {
 
 // Run the command
 func (t *Templating) Run() error {
-	if t.CommandData == nil {
-		err := t.startCommandSurvey()
-		if err != nil {
-			return err
-		}
-	}
-
 	tpl := t.getTemplateByName(t.CommandData.Template)
 
 	if tpl == nil {

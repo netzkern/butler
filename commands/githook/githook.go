@@ -113,7 +113,8 @@ func (g *Githook) getQuestions() []*survey.Question {
 	return qs
 }
 
-func (g *Githook) startCommandSurvey() error {
+// StartCommandSurvey collect all required informations from user
+func (g *Githook) StartCommandSurvey() error {
 	var cmd = &CommandData{}
 
 	// start command prompts
@@ -129,12 +130,6 @@ func (g *Githook) startCommandSurvey() error {
 
 // Run the command
 func (g *Githook) Run() error {
-	if g.CommandData == nil {
-		err := g.startCommandSurvey()
-		if err != nil {
-			return err
-		}
-	}
 	return g.Install()
 }
 

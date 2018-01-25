@@ -82,12 +82,14 @@ func interactiveCliMode() {
 			template.WithVariables(cfg.Variables),
 			template.SetConfigName(surveyFilename),
 		)
+		command.StartCommandSurvey()
 		err := command.Run()
 		if err != nil {
 			logy.Errorf(err.Error())
 		}
 	case "Install Git Hooks":
 		command := githook.New()
+		command.StartCommandSurvey()
 		err := command.Run()
 		if err != nil {
 			logy.Errorf(err.Error())
@@ -101,6 +103,7 @@ func interactiveCliMode() {
 	}
 }
 
+// WIP
 func cliMode() {
 	app := cli.NewApp()
 	app.Name = appName
