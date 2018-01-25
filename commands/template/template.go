@@ -384,15 +384,6 @@ func (t *Templating) Run() error {
 	t.startN(runtime.NumCPU())
 	startTimeTemplating := time.Now()
 
-	// close sync.WaitGroup and spinner when finished
-	defer func() {
-		t.stop()
-		spinner.Stop()
-		fmt.Printf("\nClone: %s sec \nTemplating: %s sec\n", strconv.FormatFloat(cloneDuration, 'f', 2, 64),
-			strconv.FormatFloat(time.Since(startTimeTemplating).Seconds(), 'f', 2, 64),
-		)
-	}()
-
 	t.TemplateData = &TemplateData{
 		t.CommandData,
 		time.Now().Format(time.RFC3339),
@@ -598,6 +589,15 @@ func (t *Templating) Run() error {
 		return walkErr
 	}
 
+	// stop spinner and waitGroup
+	t.stop()
+	spinner.Stop()
+
+	// print summary
+	fmt.Printf("\nClone: %s sec \nTemplating: %s sec\n", strconv.FormatFloat(cloneDuration, 'f', 2, 64),
+		strconv.FormatFloat(time.Since(startTimeTemplating).Seconds(), 'f', 2, 64),
+	)
+
 	// create hooks
 	commandGitHook := githook.New(
 		githook.WithCommandData(
@@ -613,6 +613,7 @@ func (t *Templating) Run() error {
 		return err
 	}
 
+	// run template after hooks
 	t.runSurveyTemplateHooks()
 
 	return nil
