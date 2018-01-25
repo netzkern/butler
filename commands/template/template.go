@@ -17,6 +17,7 @@ import (
 
 	logy "github.com/apex/log"
 	"github.com/briandowns/spinner"
+	"github.com/netzkern/butler/commands/githook"
 	"github.com/netzkern/butler/config"
 	"github.com/pinzolo/casee"
 	uuid "github.com/satori/go.uuid"
@@ -33,8 +34,8 @@ const (
 )
 
 type (
-	// ProjectData contains all project data
-	ProjectData struct {
+	// CommandData contains all project data
+	CommandData struct {
 		Name        string
 		Path        string
 		Template    string
@@ -50,12 +51,12 @@ type (
 		ch           chan func()
 		wg           sync.WaitGroup
 		surveyResult map[string]interface{}
-		project      *ProjectData
+		CommandData  *CommandData
 		surveys      *Survey
 	}
-	// Data basic template data
+	// TemplateData basic template data
 	TemplateData struct {
-		Project *ProjectData
+		Project *CommandData
 		Date    string
 		Year    int
 		Vars    map[string]string
@@ -140,8 +141,8 @@ func (t *Templating) getTemplateOptions() []string {
 	return tpls
 }
 
-// GetQuestions return all required prompts
-func (t *Templating) GetQuestions() []*survey.Question {
+// getQuestions return all required prompts
+func (t *Templating) getQuestions() []*survey.Question {
 	qs := []*survey.Question{
 		{
 			Name:     "Template",
@@ -210,15 +211,15 @@ func (t *Templating) Skip(path string, info os.FileInfo) (bool, error) {
 }
 
 func (t *Templating) startCommandSurvey() error {
-	var project = &ProjectData{}
+	var cd = &CommandData{}
 
 	// start command prompts
-	err := survey.Ask(t.GetQuestions(), project)
+	err := survey.Ask(t.getQuestions(), cd)
 	if err != nil {
 		return err
 	}
 
-	t.project = project
+	t.CommandData = cd
 
 	return nil
 }
@@ -288,15 +289,17 @@ func (t *Templating) generateTempFuncs() template.FuncMap {
 
 // Run the command
 func (t *Templating) Run() error {
-	err := t.startCommandSurvey()
-	if err != nil {
-		return err
+	if t.CommandData == nil {
+		err := t.startCommandSurvey()
+		if err != nil {
+			return err
+		}
 	}
 
-	tpl := t.getTemplateByName(t.project.Template)
+	tpl := t.getTemplateByName(t.CommandData.Template)
 
 	if tpl == nil {
-		return fmt.Errorf("template %s could not be found", t.project.Template)
+		return fmt.Errorf("template %s could not be found", t.CommandData.Template)
 	}
 
 	// clone repository
@@ -305,7 +308,7 @@ func (t *Templating) Run() error {
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Suffix = "Cloning repository..."
 	s.Start()
-	err = t.cloneRepo(tpl.Url, t.project.Path)
+	err := t.cloneRepo(tpl.Url, t.CommandData.Path)
 	s.Stop()
 	cloneDuration = time.Since(startTimeClone).Seconds()
 
@@ -313,7 +316,7 @@ func (t *Templating) Run() error {
 		return err
 	}
 
-	surveyFile := path.Join(t.project.Path, t.configName)
+	surveyFile := path.Join(t.CommandData.Path, t.configName)
 	ctx := logy.WithFields(logy.Fields{
 		"path": surveyFile,
 	})
@@ -342,7 +345,7 @@ func (t *Templating) Run() error {
 	}()
 
 	templateData := &TemplateData{
-		t.project,
+		t.CommandData,
 		time.Now().Format(time.RFC3339),
 		time.Now().Year(),
 		t.Variables,
@@ -355,7 +358,7 @@ func (t *Templating) Run() error {
 
 	// iterate through all directorys
 	walkDirErr := filepath.Walk(
-		t.project.Path,
+		t.CommandData.Path,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -432,7 +435,7 @@ func (t *Templating) Run() error {
 	}
 
 	// iterate through all files
-	walkErr := filepath.Walk(t.project.Path,
+	walkErr := filepath.Walk(t.CommandData.Path,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -544,6 +547,21 @@ func (t *Templating) Run() error {
 
 	if walkErr != nil {
 		return walkErr
+	}
+
+	// create hooks
+	commandGitHook := githook.New(
+		githook.WithCommandData(
+			&githook.CommandData{
+				Path:  t.CommandData.Path,
+				Hooks: githook.Hooks,
+			},
+		),
+	)
+	err = commandGitHook.Run()
+	if err != nil {
+		logy.WithError(err).Error("Could not create git hooks")
+		return err
 	}
 
 	return nil

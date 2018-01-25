@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	logy "github.com/apex/log"
+	"github.com/netzkern/butler/commands/githook"
 	"github.com/netzkern/butler/commands/template"
 	"github.com/netzkern/butler/config"
 	"github.com/netzkern/butler/updater"
@@ -30,6 +31,7 @@ var (
 	version  = "master"
 	commands = []string{
 		"Project Templates",
+		"Install Git Hooks",
 		"Auto Update",
 		"Version",
 	}
@@ -46,7 +48,7 @@ var (
 )
 
 func init() {
-	logy.SetLevel(logy.InfoLevel)
+	logy.SetLevel(logy.ErrorLevel)
 	cfg = config.ParseConfig(configName)
 
 	// Windows comaptible symbols
@@ -80,6 +82,12 @@ func interactiveCliMode() {
 			template.WithVariables(cfg.Variables),
 			template.SetConfigName(surveyFilename),
 		)
+		err := command.Run()
+		if err != nil {
+			logy.Errorf(err.Error())
+		}
+	case "Install Git Hooks":
+		command := githook.New()
 		err := command.Run()
 		if err != nil {
 			logy.Errorf(err.Error())
