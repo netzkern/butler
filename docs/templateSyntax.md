@@ -45,7 +45,7 @@ butler{ .Vars.company }
 - `butler{ toPascalCase "foo-bar" }` Return the project name in pascal-case.
 - `butler{ toSnakeCase "foo-bar" }` Return "foo-bar" in snake-case.
 - `butler{ toPascalCase "foo-bar" }` Return "foo-bar" in pascal-case.
-- `butler{ print uuid }` Return a random UUID Version 4.
+- `butler{ uuid }` Return a random UUID Version 4.
 
 ## Define variables in templates
 ```
