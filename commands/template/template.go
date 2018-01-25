@@ -80,6 +80,20 @@ func New(options ...Option) *Templating {
 		ch:           make(chan func(), runtime.NumCPU()),
 	}
 
+	v.templateFuncMap = template.FuncMap{
+		"toCamelCase":  casee.ToCamelCase,
+		"toPascalCase": casee.ToPascalCase,
+		"toSnakeCase":  casee.ToSnakeCase,
+		"join":         strings.Join,
+		"uuid": func() (string, error) {
+			ui, err := uuid.NewV4()
+			if err != nil {
+				return "", err
+			}
+			return ui.String(), nil
+		},
+	}
+
 	for _, o := range options {
 		o(v)
 	}
@@ -112,6 +126,13 @@ func WithTemplates(s []config.Template) Option {
 func WithCommandData(cd *CommandData) Option {
 	return func(t *Templating) {
 		t.CommandData = cd
+	}
+}
+
+// WithTemplateSurveyResults option.
+func WithTemplateSurveyResults(sr map[string]interface{}) Option {
+	return func(t *Templating) {
+		t.surveyResult = sr
 	}
 }
 
@@ -230,6 +251,7 @@ func (t *Templating) StartCommandSurvey() error {
 	// start command prompts
 	err := survey.Ask(t.getQuestions(), cd)
 	if err != nil {
+		logy.WithError(err).Error("command survey")
 		return err
 	}
 
@@ -238,28 +260,21 @@ func (t *Templating) StartCommandSurvey() error {
 	return nil
 }
 
-func (t *Templating) startTemplateSurvey(path string) error {
-	surveyResults := make(map[string]interface{})
-	surveys, err := ReadSurveyConfig(path)
-	if err == nil {
-		questions, err := BuildSurveys(surveys)
-		if err != nil {
-			logy.WithError(err).Error("build surveys")
-			return err
-		}
-
-		err = survey.Ask(questions, &surveyResults)
-
-		if err != nil {
-			logy.WithError(err).Error("start survey")
-			return err
-		}
+func (t *Templating) startTemplateSurvey(surveys *Survey) error {
+	questions, err := BuildSurveys(surveys)
+	if err != nil {
+		logy.WithError(err).Error("build surveys")
+		return err
 	}
 
-	t.surveys = surveys
-	t.surveyResult = surveyResults
+	t.surveyResult = map[string]interface{}{}
+	err = survey.Ask(questions, &t.surveyResult)
+	if err != nil {
+		logy.WithError(err).Error("start template survey")
+		return err
+	}
 
-	logy.Debugf("Survey results %+v", surveyResults)
+	logy.Debugf("Survey results %+v", t.surveyResult)
 
 	return nil
 }
@@ -307,24 +322,14 @@ func (t *Templating) runSurveyTemplateHooks() {
 
 // generateTempFuncs create helper funcs and getters based on the survey result
 func (t *Templating) generateTempFuncs() {
-	utilFuncMap := template.FuncMap{
-		"toCamelCase":  casee.ToCamelCase,
-		"toPascalCase": casee.ToPascalCase,
-		"toSnakeCase":  casee.ToSnakeCase,
-		"join":         strings.Join,
-	}
-
-	utilFuncMap["uuid"] = func() (string, error) {
-		ui, err := uuid.NewV4()
-		if err != nil {
-			return "", err
-		}
-		return ui.String(), nil
+	if t.surveyResult == nil {
+		logy.Debug("could not generate getter functions due to empty survey results")
+		return
 	}
 
 	// create getter functions for the survey results for easier access
 	for key, val := range t.surveyResult {
-		utilFuncMap["get"+casee.ToPascalCase(key)] = (func(v interface{}) func() interface{} {
+		t.templateFuncMap["get"+casee.ToPascalCase(key)] = (func(v interface{}) func() interface{} {
 			return func() interface{} {
 				return v
 			}
@@ -333,14 +338,13 @@ func (t *Templating) generateTempFuncs() {
 
 	// create getter functions for the survey options for easier access
 	for _, question := range t.surveys.Questions {
-		utilFuncMap["get"+casee.ToPascalCase(question.Name+"Question")] = (func(v Question) func() interface{} {
+		t.templateFuncMap["get"+casee.ToPascalCase(question.Name+"Question")] = (func(v Question) func() interface{} {
 			return func() interface{} {
 				return question
 			}
 		})(question)
 	}
 
-	t.templateFuncMap = utilFuncMap
 }
 
 // Run the command
@@ -360,6 +364,7 @@ func (t *Templating) Run() error {
 	cloneSpinner.Stop()
 
 	if err != nil {
+		logy.WithError(err).Error("clone")
 		return err
 	}
 
@@ -368,9 +373,18 @@ func (t *Templating) Run() error {
 		"path": surveyFile,
 	})
 
-	err = t.startTemplateSurvey(surveyFile)
+	surveys, err := ReadSurveyConfig(surveyFile)
 	if err != nil {
+		ctx.WithError(err).Error("read survey config")
 		return err
+	}
+	t.surveys = surveys
+
+	err = t.startTemplateSurvey(surveys)
+	if err != nil {
+		ctx.WithError(err).Error("start template survey")
+		return err
+
 	}
 
 	// spinner progress
@@ -398,7 +412,14 @@ func (t *Templating) Run() error {
 	walkDirErr := filepath.Walk(
 		t.CommandData.Path,
 		func(path string, info os.FileInfo, err error) error {
+			ctx := logy.WithFields(logy.Fields{
+				"path": path,
+				"size": info.Size(),
+				"dir":  info.IsDir(),
+			})
+
 			if err != nil {
+				ctx.WithError(err).Error("inside walk")
 				return err
 			}
 
@@ -415,12 +436,6 @@ func (t *Templating) Run() error {
 				return skipDirErr
 			}
 
-			ctx := logy.WithFields(logy.Fields{
-				"path": path,
-				"size": info.Size(),
-				"dir":  info.IsDir(),
-			})
-
 			defer func() {
 				if r := recover(); r != nil {
 					ctx.Error("directory templating error")
@@ -435,12 +450,14 @@ func (t *Templating) Run() error {
 
 			if err != nil {
 				ctx.WithError(err).Error("create template for directory")
+				return err
 			}
 
 			var dirNameBuffer bytes.Buffer
 			err = tplDir.Execute(&dirNameBuffer, t.TemplateData)
 			if err != nil {
 				ctx.WithError(err).Error("execute template for directory")
+				return err
 			}
 
 			newDirectory := dirNameBuffer.String()
@@ -458,6 +475,7 @@ func (t *Templating) Run() error {
 		})
 
 	if walkDirErr != nil {
+		logy.WithError(walkDirErr).Error("walk dir")
 		return walkDirErr
 	}
 
@@ -475,7 +493,14 @@ func (t *Templating) Run() error {
 	// iterate through all files
 	walkErr := filepath.Walk(t.CommandData.Path,
 		func(path string, info os.FileInfo, err error) error {
+			ctx := logy.WithFields(logy.Fields{
+				"path": path,
+				"size": info.Size(),
+				"dir":  info.IsDir(),
+			})
+
 			if err != nil {
+				ctx.WithError(err).Error("inside walk")
 				return err
 			}
 
@@ -494,15 +519,8 @@ func (t *Templating) Run() error {
 				return nil
 			}
 
-			ctx := logy.WithFields(logy.Fields{
-				"path": path,
-				"size": info.Size(),
-				"dir":  info.IsDir(),
-			})
-
 			// template file
 			t.ch <- func() {
-
 				defer func() {
 					if r := recover(); r != nil {
 						ctx.Error("templating error")
@@ -610,8 +628,12 @@ func (t *Templating) Run() error {
 	logy.Debug("execute template hooks")
 
 	startTimeHooks := time.Now()
-	// run template after hooks
-	t.runSurveyTemplateHooks()
+
+	if t.surveyResult != nil {
+		t.runSurveyTemplateHooks()
+	} else {
+		logy.Debug("skip template survey")
+	}
 
 	// print summary
 	totalCloneDuration := time.Since(startTimeClone).Seconds()

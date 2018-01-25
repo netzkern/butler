@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sort"
 
 	logy "github.com/apex/log"
 	"github.com/netzkern/butler/commands/githook"
@@ -103,31 +104,40 @@ func interactiveCliMode() {
 	}
 }
 
-// WIP
 func cliMode() {
+
+	type surveyResult map[string]interface{}
+
 	app := cli.NewApp()
 	app.Name = appName
 	app.Usage = "your personal assistent to scaffold new projects."
 	app.Author = author
 	app.Version = version
 	app.Description = appDesc
+
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:   "logLevel",
+			Value:  "info",
+			Usage:  "Log level",
+			EnvVar: "BUTLER_LOG_LEVEL",
+		},
+	}
 	app.Commands = []cli.Command{
 		{
-			Name:    "template",
-			Aliases: []string{"t"},
-			Usage:   "options for task templates",
-			Subcommands: []cli.Command{
-				{
-					Name:  "create",
-					Usage: "checkout a new template",
-					Action: func(c *cli.Context) error {
-						fmt.Println("new task template: ", c.Args().First())
-						return nil
-					},
-				},
+			Name:    "interactive",
+			Aliases: []string{"ui"},
+			Usage:   "Enable interactive cli",
+			Action: func(c *cli.Context) error {
+				setLogLevel(c.GlobalString("logLevel"))
+				interactiveCliMode()
+				return nil
 			},
 		},
 	}
+
+	sort.Sort(cli.FlagsByName(app.Flags))
+	sort.Sort(cli.CommandsByName(app.Commands))
 
 	app.Run(os.Args)
 }
@@ -139,4 +149,21 @@ func main() {
 	}
 
 	interactiveCliMode()
+}
+
+func setLogLevel(level string) {
+	switch level {
+	case "info":
+		logy.SetLevel(logy.InfoLevel)
+	case "debug":
+		logy.SetLevel(logy.DebugLevel)
+	case "fatal":
+		logy.SetLevel(logy.FatalLevel)
+	case "error":
+		logy.SetLevel(logy.ErrorLevel)
+	case "warn":
+		logy.SetLevel(logy.WarnLevel)
+	default:
+		logy.Fatalf("Invalid log level '%s'", level)
+	}
 }

@@ -16,6 +16,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 * <a href="/docs/templateSurveys.md"><code><b>Template Surveys</b></code></a>
 * <a href="/docs/templateSyntax.md"><code><b>Template Syntax</b></code></a>
 * <a href="/docs/gitHooks.md"><code><b>Git Hooks</b></code></a>
+* <a href="#commands"><code><b>Debugging</b></code></a>
 * <a href="#commands"><code><b>Commands</b></code></a>
 
 ## Commands
