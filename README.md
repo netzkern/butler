@@ -22,6 +22,8 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 - **Project Templates:** This command will create a new project based on the selected template.
 - **Install Git Hooks:** This command will install all hooks from the folder `git_hooks` as hard links.
+- **Auto Update:** This command will update Butler to the latest version.
+- **Version:** This command will return the current version of Butler.
 
 ## Maintenance
 
