@@ -352,14 +352,12 @@ func (t *Templating) Run() error {
 	}
 
 	// clone repository
-	var cloneDuration float64
 	startTimeClone := time.Now()
-	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Suffix = "Cloning repository..."
-	s.Start()
+	cloneSpinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	cloneSpinner.Suffix = "Cloning repository..."
+	cloneSpinner.Start()
 	err := t.cloneRepo(tpl.Url, t.CommandData.Path)
-	s.Stop()
-	cloneDuration = time.Since(startTimeClone).Seconds()
+	cloneSpinner.Stop()
 
 	if err != nil {
 		return err
@@ -376,9 +374,9 @@ func (t *Templating) Run() error {
 	}
 
 	// spinner progress
-	spinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	spinner.Suffix = "Processing templates..."
-	spinner.Start()
+	templatingSpinner := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	templatingSpinner.Suffix = "Processing templates..."
+	templatingSpinner.Start()
 
 	// start multiple routines
 	t.startN(runtime.NumCPU())
@@ -577,7 +575,7 @@ func (t *Templating) Run() error {
 
 				// remove old file when the name was changed
 				if path != newPath {
-					ctx.Debug("filename changed")
+					ctx.Debug("delete due to different filename")
 					os.Remove(path)
 				}
 			}
@@ -589,16 +587,9 @@ func (t *Templating) Run() error {
 		return walkErr
 	}
 
-	// stop spinner and waitGroup
 	t.stop()
-	spinner.Stop()
+	templatingSpinner.Stop()
 
-	// print summary
-	fmt.Printf("\nClone: %s sec \nTemplating: %s sec\n", strconv.FormatFloat(cloneDuration, 'f', 2, 64),
-		strconv.FormatFloat(time.Since(startTimeTemplating).Seconds(), 'f', 2, 64),
-	)
-
-	// create hooks
 	commandGitHook := githook.New(
 		githook.WithCommandData(
 			&githook.CommandData{
@@ -607,14 +598,32 @@ func (t *Templating) Run() error {
 			},
 		),
 	)
+
+	logy.Debug("create git hooks")
+
 	err = commandGitHook.Run()
 	if err != nil {
 		logy.WithError(err).Error("Could not create git hooks")
 		return err
 	}
 
+	logy.Debug("execute template hooks")
+
+	startTimeHooks := time.Now()
 	// run template after hooks
 	t.runSurveyTemplateHooks()
+
+	// print summary
+	totalCloneDuration := time.Since(startTimeClone).Seconds()
+	totalTemplatingDuration := time.Since(startTimeTemplating).Seconds()
+	totalHooksDuration := time.Since(startTimeHooks).Seconds()
+	totalDuration := totalCloneDuration + totalTemplatingDuration + totalHooksDuration
+	fmt.Printf("\nClone: %s sec \nTemplating: %s sec\nHooks: %s\nTotal: %s sec",
+		strconv.FormatFloat(totalCloneDuration, 'f', 2, 64),
+		strconv.FormatFloat(totalTemplatingDuration, 'f', 2, 64),
+		strconv.FormatFloat(totalHooksDuration, 'f', 2, 64),
+		strconv.FormatFloat(totalDuration, 'f', 2, 64),
+	)
 
 	return nil
 }
