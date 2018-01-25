@@ -279,7 +279,7 @@ func (t *Templating) startTemplateSurvey(surveys *Survey) error {
 		return err
 	}
 
-	logy.Debugf("Survey results %+v", t.surveyResult)
+	logy.Debugf("survey results %+v", t.surveyResult)
 
 	return nil
 }
@@ -619,18 +619,17 @@ func (t *Templating) Run() error {
 
 	err = commandGitHook.Run()
 	if err != nil {
-		logy.WithError(err).Error("Could not create git hooks")
+		logy.WithError(err).Error("could not create git hooks")
 		return err
 	}
-
-	logy.Debug("execute template hooks")
 
 	startTimeHooks := time.Now()
 
 	if t.surveyResult != nil {
+		logy.Debug("execute template hooks")
 		t.runSurveyTemplateHooks()
 	} else {
-		logy.Debug("skip template survey")
+		logy.Debug("skip template hooks")
 	}
 
 	// print summary
