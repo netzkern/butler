@@ -41,11 +41,12 @@ butler{ .Vars.company }
 ```
 
 ## Helper functions
-- `butler{ toCamelCase .Project.Name }` Return the project name in camel-case.
-- `butler{ toPascalCase "foo-bar" }` Return the project name in pascal-case.
-- `butler{ toSnakeCase "foo-bar" }` Return "foo-bar" in snake-case.
-- `butler{ toPascalCase "foo-bar" }` Return "foo-bar" in pascal-case.
-- `butler{ uuid }` Return a random UUID Version 4.
+- `butler{ toCamelCase .Project.Name }` Transform a string to camel-case.
+- `butler{ toPascalCase "foo-bar" }` Transform a string to pascal-case.
+- `butler{ toSnakeCase "foo-bar" }` Transform a string to snake-case.
+- `butler{ toPascalCase "foo-bar" }` Transform a string to pascal-case.
+- `butler{ join $array "," }` Joins all elements of an array into a string and returns this string.
+- `butler{ uuid }` Returns a random UUID Version 4.
 
 ## Define variables in templates
 ```
