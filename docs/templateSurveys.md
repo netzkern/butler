@@ -1,13 +1,13 @@
 # Butler Template Surveys
 
-Your are able to create an interactive survey before your template is proceed. The results can be used inside the template.
+Your are able to create an interactive survey before your template is proceed. The results can be used to build templates for user-specific requirements.
 
 ## How to create a survey?
 
 1. Create a config file `butler-survey.yml` in the root directory of the template repository.
-2. Create questions based on the format below.
-3. Build your template with [easy to use](/docs/templateSyntax.md#get-survey-results) template syntax.
-4. Run butler and create your new project.
+2. Create questions based on the [format](#configuration) below.
+3. Build your template with the [easy to use](/docs/templateSyntax.md#get-survey-results) template syntax.
+4. Run butler and create your a new project.
 
 **butler-survey.yml**
 ```yml
@@ -32,7 +32,7 @@ questions:
     options: ["mongodb", "mssql", "redis"]
     required: true
 
-# Are executed after the project was created completly.
+# hooks are executed after the project is created completly.
 afterHooks:
   - cmd: node
     args: ["v"]
@@ -53,7 +53,7 @@ afterHooks:
 #### After hooks
 - cmd: command to execute `string`
 - args: arguments `[]string`
-- enabled: a template expression
+- enabled: a template expression which has to evaluate to `true` when `false` the command is skipped
 
 ## Access survey results in hook scripts
 

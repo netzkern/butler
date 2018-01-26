@@ -46,7 +46,9 @@ butler{ .Vars.company }
 - `butler{ toSnakeCase "foo-bar" }` Transform a string to snake-case.
 - `butler{ toPascalCase "foo-bar" }` Transform a string to pascal-case.
 - `butler{ join $array "," }` Joins all elements of an array into a string and returns this string.
-- `butler{ uuid }` Returns a random UUID Version 4.
+- `butler{ uuid }` Returns a random UUID Version 4 string.
+
+_All functions are written in camelCase_
 
 ## Define variables in templates
 ```
@@ -55,11 +57,18 @@ butler{$id} // print id
 ```
 
 ## Get survey results
-We generate getter functions to provide an easier access to survey results. If you set the name e.g to `name: db` of a question you can access the value with:
+We generate getter functions to provide an easier access to survey results. If you have a question with the name `color` the result is accessible by:
 
 ```
-butler{getDb}
+butler{ getColor }
 ```
+
+## Get survey question
+You can access the survey questions with the same approach
+```
+butler{ getColorQuestion }
+```
+
 ## Conditions in templates
 ```
 butler{if eq getDb "mongodb"}
