@@ -321,7 +321,7 @@ func (t *Templating) StartCommandSurvey() error {
 func (t *Templating) confirmPackTemplate() (bool, error) {
 	packTemplate := false
 	prompt := &survey.Confirm{
-		Message: "Do you really want to proceed?",
+		Message: fmt.Sprintf("Do you really want to checkout to '%s' ?", t.CommandData.Path),
 	}
 
 	err := survey.AskOne(prompt, &packTemplate, nil)
