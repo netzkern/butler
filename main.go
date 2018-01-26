@@ -52,7 +52,7 @@ func init() {
 	logy.SetLevel(logy.DebugLevel)
 	cfg = config.ParseConfig(configName)
 
-	// Windows comaptible symbols
+	// Windows compatible symbols
 	if runtime.GOOS == "windows" {
 		core.ErrorIcon = "X"
 		core.HelpIcon = "????"
@@ -105,7 +105,6 @@ func interactiveCliMode() {
 }
 
 func cliMode() {
-
 	type surveyResult map[string]interface{}
 
 	app := cli.NewApp()
@@ -142,15 +141,6 @@ func cliMode() {
 	app.Run(os.Args)
 }
 
-func main() {
-	if len(os.Args[1:]) > 0 {
-		cliMode()
-		return
-	}
-
-	interactiveCliMode()
-}
-
 func setLogLevel(level string) {
 	switch level {
 	case "info":
@@ -166,4 +156,13 @@ func setLogLevel(level string) {
 	default:
 		logy.Fatalf("Invalid log level '%s'", level)
 	}
+}
+
+func main() {
+	if len(os.Args[1:]) > 0 {
+		cliMode()
+		return
+	}
+
+	interactiveCliMode()
 }
