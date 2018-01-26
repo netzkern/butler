@@ -20,6 +20,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/netzkern/butler/commands/githook"
 	"github.com/netzkern/butler/config"
+	"github.com/netzkern/butler/utils"
 	"github.com/pinzolo/casee"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -62,6 +63,7 @@ type (
 		surveys         *Survey
 		dirRenamings    map[string]string
 		dirRemovings    []string
+		gitDir          string
 	}
 	// TemplateData basic template data
 	TemplateData struct {
@@ -106,24 +108,31 @@ func New(options ...Option) *Templating {
 	return v
 }
 
+// WithGitDir option.
+func WithGitDir(dir string) Option {
+	return func(t *Templating) {
+		t.gitDir = dir
+	}
+}
+
 // WithVariables option.
 func WithVariables(s map[string]string) Option {
-	return func(v *Templating) {
-		v.Variables = s
+	return func(t *Templating) {
+		t.Variables = s
 	}
 }
 
 // SetConfigName option.
 func SetConfigName(s string) Option {
-	return func(v *Templating) {
-		v.configName = s
+	return func(t *Templating) {
+		t.configName = s
 	}
 }
 
 // WithTemplates option.
 func WithTemplates(s []config.Template) Option {
-	return func(v *Templating) {
-		v.Templates = s
+	return func(t *Templating) {
+		t.Templates = s
 	}
 }
 
@@ -141,19 +150,51 @@ func WithTemplateSurveyResults(sr map[string]interface{}) Option {
 	}
 }
 
-// cloneRepo clone a repo to the dst
-func (t *Templating) cloneRepo(repoURL string, dest string) error {
+// unpackTemplate clone a repo to the dst
+func (t *Templating) unpackTemplate(repoURL string, dest string) error {
 	_, err := git.PlainClone(dest, false, &git.CloneOptions{
 		URL: repoURL,
 	})
 
-	if err == git.ErrRepositoryAlreadyExists {
-		return errors.Wrapf(err, "respository already exists. Remove '%s' directory", dest)
+	if err != nil {
+		return err
 	}
 
-	os.RemoveAll(filepath.Join(dest, ".git"))
+	// remove git files
+	err = os.RemoveAll(filepath.Join(dest, ".git"))
+	if err != nil {
+		return errors.Wrap(err, "remove all failed")
+	}
 
 	return err
+}
+
+func (t *Templating) packTemplate(tempDir, dest string) error {
+	// move files from temp to cd
+	if dest == "." {
+		err := utils.MoveDir(tempDir, ".")
+		if err != nil {
+			return errors.Wrap(err, "move failed")
+		}
+		err = os.RemoveAll(tempDir)
+		if err != nil {
+			return errors.Wrap(err, "remove all failed")
+		}
+	} else {
+		err := os.Rename(tempDir, dest)
+		if err != nil {
+			return errors.Wrap(err, "rename failed")
+		}
+	}
+	return nil
+}
+
+func (t *Templating) cleanTemplate(tempDir string) error {
+	err := os.RemoveAll(tempDir)
+	if err != nil {
+		return errors.Wrap(err, "remove all failed")
+	}
+	return nil
 }
 
 // getTemplateByName returns the template by name
@@ -222,8 +263,9 @@ func (t *Templating) getQuestions() []*survey.Question {
 
 // Skip returns an error when a directory should be skipped or true with a file
 func (t *Templating) Skip(path string, info os.FileInfo) (bool, error) {
+	name := info.Name()
 	// ignore hidden dirs and files
-	if strings.HasPrefix(info.Name(), ".") {
+	if len(name) > 1 && strings.HasPrefix(name, ".") {
 		if info.IsDir() {
 			return false, filepath.SkipDir
 		}
@@ -232,7 +274,7 @@ func (t *Templating) Skip(path string, info os.FileInfo) (bool, error) {
 
 	// skip blacklisted directories
 	if info.IsDir() {
-		_, ok := t.excludedDirs[info.Name()]
+		_, ok := t.excludedDirs[name]
 		if ok {
 			return false, filepath.SkipDir
 		}
@@ -240,7 +282,7 @@ func (t *Templating) Skip(path string, info os.FileInfo) (bool, error) {
 
 	// skip blacklisted extensions
 	if !info.IsDir() {
-		_, ok := t.excludedExts[filepath.Ext("."+info.Name())]
+		_, ok := t.excludedExts[filepath.Ext("."+name)]
 		if ok {
 			return true, nil
 		}
@@ -260,8 +302,23 @@ func (t *Templating) StartCommandSurvey() error {
 	}
 
 	t.CommandData = cd
+	t.CommandData.Path = path.Clean(cd.Path)
 
 	return nil
+}
+
+func (t *Templating) confirmPackTemplate() (bool, error) {
+	packTemplate := false
+	prompt := &survey.Confirm{
+		Message: "Do you really want to proceed?",
+	}
+
+	err := survey.AskOne(prompt, &packTemplate, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "confirm failed")
+	}
+
+	return packTemplate, nil
 }
 
 func (t *Templating) startTemplateSurvey(surveys *Survey) error {
@@ -282,7 +339,7 @@ func (t *Templating) startTemplateSurvey(surveys *Survey) error {
 }
 
 // runSurveyTemplateHooks run all template hooks
-func (t *Templating) runSurveyTemplateHooks() error {
+func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 	for i, hook := range t.surveys.AfterHooks {
 		ctx := logy.WithFields(logy.Fields{
 			"cmd":  hook.Cmd,
@@ -309,7 +366,7 @@ func (t *Templating) runSurveyTemplateHooks() error {
 		}
 
 		cmd := exec.Command(hook.Cmd, hook.Args...)
-		cmd.Dir = path.Clean(t.CommandData.Path)
+		cmd.Dir = cmdDir
 		// inherit process env
 		cmd.Env = append(mapToEnvArray(t.surveyResult, envPrefix), os.Environ()...)
 		cmd.Stdout = os.Stdout
@@ -521,26 +578,45 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 }
 
 // Run the command
-func (t *Templating) Run() error {
+func (t *Templating) Run() (err error) {
 	tpl := t.getTemplateByName(t.CommandData.Template)
 
 	if tpl == nil {
-		return errors.Errorf("template %s could not be found", t.CommandData.Template)
+		err = errors.Errorf("template %s could not be found", t.CommandData.Template)
+		return
 	}
 
-	// clone repository
 	startTimeClone := time.Now()
 	cloneSpinner := defaultSpinner("Cloning repository...")
 	cloneSpinner.Start()
-	err := t.cloneRepo(tpl.Url, t.CommandData.Path)
+
+	// unpack template
+	tempDir, err := ioutil.TempDir(t.gitDir, "butler")
+	if err != nil {
+		err = errors.Wrap(err, "create temp folder failed")
+	}
+
+	err = t.unpackTemplate(tpl.Url, tempDir)
+
+	defer func() {
+		r := recover()
+		if err != nil || r != nil {
+			err = t.cleanTemplate(tempDir)
+			if err != nil {
+				logy.WithError(err).Error("clean template failed")
+			}
+			logy.Debug("clean template")
+		}
+	}()
+
 	cloneSpinner.Stop()
 
 	if err != nil {
 		logy.WithError(err).Error("clone")
-		return err
+		return
 	}
 
-	surveyFilePath := path.Join(t.CommandData.Path, t.configName)
+	surveyFilePath := path.Join(tempDir, t.configName)
 	ctx := logy.WithFields(logy.Fields{
 		"path": surveyFilePath,
 	})
@@ -548,14 +624,14 @@ func (t *Templating) Run() error {
 	surveys, err := ReadSurveyConfig(surveyFilePath)
 	if err != nil {
 		ctx.WithError(err).Error("read survey config")
-		return err
+		return
 	}
 	t.surveys = surveys
 
 	err = t.startTemplateSurvey(surveys)
 	if err != nil {
 		ctx.WithError(err).Error("start template survey")
-		return err
+		return
 	}
 
 	// spinner progress
@@ -578,12 +654,15 @@ func (t *Templating) Run() error {
 		t.generateTempFuncs()
 	}
 
+	logy.Debugf("dir walk in path %s", tempDir)
+
 	// iterate through all directorys
-	walkDirErr := filepath.Walk(t.CommandData.Path, t.walkDirectories)
+	walkDirErr := filepath.Walk(tempDir, t.walkDirectories)
 
 	if walkDirErr != nil {
 		logy.WithError(walkDirErr).Error("walk dir")
-		return walkDirErr
+		err = walkDirErr
+		return
 	}
 
 	// rename and remove changed dirs from walk
@@ -597,17 +676,46 @@ func (t *Templating) Run() error {
 		os.RemoveAll(path)
 	}
 
+	logy.Debugf("file walk in path %s", tempDir)
+
 	// iterate through all files
-	walkErr := filepath.Walk(t.CommandData.Path, t.walkFiles)
+	walkErr := filepath.Walk(tempDir, t.walkFiles)
 
 	if walkErr != nil {
-		return walkErr
+		err = walkErr
+		return
 	}
 
 	t.stop()
 	templatingSpinner.Stop()
 
+	startTimeHooks := time.Now()
+
+	if t.surveyResult != nil {
+		logy.Debug("execute template hooks")
+		err = t.runSurveyTemplateHooks(tempDir)
+		if err != nil {
+			logy.WithError(err).Error("template hooks failed")
+			return
+		}
+	} else {
+		logy.Debug("skip template hooks")
+	}
+
+	confirmed, err := t.confirmPackTemplate()
+	if confirmed {
+		err = t.packTemplate(tempDir, t.CommandData.Path)
+		if err != nil {
+			logy.WithError(err).Error("pack template failed")
+			return
+		}
+	} else {
+		err = errors.New("abort templating")
+		return
+	}
+
 	commandGitHook := githook.New(
+		githook.WithGitDir(t.gitDir),
 		githook.WithCommandData(
 			&githook.CommandData{
 				Path:  t.CommandData.Path,
@@ -621,20 +729,7 @@ func (t *Templating) Run() error {
 	err = commandGitHook.Run()
 	if err != nil {
 		logy.WithError(err).Error("could not create git hooks")
-		return err
-	}
-
-	startTimeHooks := time.Now()
-
-	if t.surveyResult != nil {
-		logy.Debug("execute template hooks")
-		err := t.runSurveyTemplateHooks()
-		if err != nil {
-			logy.WithError(err).Error("template hooks failed")
-			return err
-		}
-	} else {
-		logy.Debug("skip template hooks")
+		return
 	}
 
 	// print summary
@@ -649,7 +744,7 @@ func (t *Templating) Run() error {
 		strconv.FormatFloat(totalDuration, 'f', 2, 64),
 	)
 
-	return nil
+	return
 }
 
 // startN starts n loops.

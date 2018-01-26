@@ -49,7 +49,7 @@ var (
 )
 
 func init() {
-	logy.SetLevel(logy.DebugLevel)
+	logy.SetLevel(logy.InfoLevel)
 	cfg = config.ParseConfig(configName)
 
 	// Windows compatible symbols
@@ -76,22 +76,29 @@ func interactiveCliMode() {
 		return
 	}
 
+	cd, err := os.Getwd()
+	if err != nil {
+		logy.WithError(err)
+		return
+	}
+
 	switch taskType := answers.Action; taskType {
 	case "Project Templates":
 		command := template.New(
 			template.WithTemplates(cfg.Templates),
 			template.WithVariables(cfg.Variables),
 			template.SetConfigName(surveyFilename),
+			template.WithGitDir(cd),
 		)
 		command.StartCommandSurvey()
 		err := command.Run()
 		if err != nil {
-			logy.Errorf(err.Error())
+			logy.WithError(err)
 		}
 	case "Install Git Hooks":
-		command := githook.New()
+		command := githook.New(githook.WithGitDir(cd))
 		command.StartCommandSurvey()
-		err := command.Run()
+		err = command.Run()
 		if err != nil {
 			logy.Errorf(err.Error())
 		}
