@@ -609,6 +609,8 @@ func (t *Templating) Run() (err error) {
 
 	err = t.unpackTemplate(tpl.Url, tempDir)
 
+	endTimeClone := time.Since(startTimeClone).Seconds()
+
 	defer func() {
 		r := recover()
 		if err != nil || r != nil {
@@ -700,6 +702,8 @@ func (t *Templating) Run() (err error) {
 	t.stop()
 	templatingSpinner.Stop()
 
+	endTimeTemplating := time.Since(startTimeTemplating).Seconds()
+
 	startTimeHooks := time.Now()
 
 	if t.surveyResult != nil {
@@ -712,6 +716,8 @@ func (t *Templating) Run() (err error) {
 	} else {
 		logy.Debug("skip template hooks")
 	}
+
+	endTimeHooks := time.Since(startTimeHooks).Seconds()
 
 	confirmed, err := t.confirmPackTemplate()
 	if confirmed {
@@ -744,14 +750,11 @@ func (t *Templating) Run() (err error) {
 	}
 
 	// print summary
-	totalCloneDuration := time.Since(startTimeClone).Seconds()
-	totalTemplatingDuration := time.Since(startTimeTemplating).Seconds()
-	totalHooksDuration := time.Since(startTimeHooks).Seconds()
-	totalDuration := totalCloneDuration + totalTemplatingDuration + totalHooksDuration
+	totalDuration := endTimeClone + endTimeTemplating + endTimeHooks
 	fmt.Printf("\nClone: %s sec \nTemplating: %s sec\nHooks: %s\nTotal: %s sec",
-		strconv.FormatFloat(totalCloneDuration, 'f', 2, 64),
-		strconv.FormatFloat(totalTemplatingDuration, 'f', 2, 64),
-		strconv.FormatFloat(totalHooksDuration, 'f', 2, 64),
+		strconv.FormatFloat(endTimeClone, 'f', 2, 64),
+		strconv.FormatFloat(endTimeTemplating, 'f', 2, 64),
+		strconv.FormatFloat(endTimeHooks, 'f', 2, 64),
 		strconv.FormatFloat(totalDuration, 'f', 2, 64),
 	)
 
