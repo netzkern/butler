@@ -179,9 +179,19 @@ func (t *Templating) packTemplate(tempDir, dest string) error {
 		}
 	}
 
+	destAbs, err := filepath.Abs(dest)
+	if err != nil {
+		return errors.Wrap(err, "dest abs failed")
+	}
+
+	gitDirAbs, err := filepath.Abs(t.gitDir)
+	if err != nil {
+		return errors.Wrap(err, "gitDir abs failed")
+	}
+
 	// move files from temp to cd
-	if dest == "." {
-		err := utils.MoveDir(tempDir, ".")
+	if destAbs == gitDirAbs {
+		err := utils.MoveDir(tempDir, gitDirAbs)
 		if err != nil {
 			return errors.Wrap(err, "move failed")
 		}

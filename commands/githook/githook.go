@@ -90,9 +90,9 @@ func (g *Githook) Install() error {
 				logy.WithError(err).Errorf("Could not link hook %s", h)
 				return err
 			}
-			logy.Debugf("hook '%s' installed", h)
+			logy.Infof("hook '%s' installed", h)
 		} else {
-			logy.Infof("template for hook '%s' could not be found in '%s'", h, path.Join(g.CommandData.Path, repoHookDir))
+			logy.Debugf("template for hook '%s' could not be found in '%s'", h, path.Join(g.CommandData.Path, repoHookDir))
 		}
 
 	}
