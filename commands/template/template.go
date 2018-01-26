@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -22,6 +21,7 @@ import (
 	"github.com/netzkern/butler/commands/githook"
 	"github.com/netzkern/butler/config"
 	"github.com/pinzolo/casee"
+	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
@@ -148,7 +148,7 @@ func (t *Templating) cloneRepo(repoURL string, dest string) error {
 	})
 
 	if err == git.ErrRepositoryAlreadyExists {
-		return fmt.Errorf("respository already exists. Remove '%s' directory", dest)
+		return errors.Wrapf(err, "respository already exists. Remove '%s' directory", dest)
 	}
 
 	os.RemoveAll(filepath.Join(dest, ".git"))
@@ -256,8 +256,7 @@ func (t *Templating) StartCommandSurvey() error {
 	// start command prompts
 	err := survey.Ask(t.getQuestions(), cd)
 	if err != nil {
-		logy.WithError(err).Error("command survey")
-		return err
+		return errors.Wrap(err, "command survey")
 	}
 
 	t.CommandData = cd
@@ -268,15 +267,13 @@ func (t *Templating) StartCommandSurvey() error {
 func (t *Templating) startTemplateSurvey(surveys *Survey) error {
 	questions, err := BuildSurveys(surveys)
 	if err != nil {
-		logy.WithError(err).Error("build surveys")
-		return err
+		return errors.Wrap(err, "build surveys")
 	}
 
 	t.surveyResult = map[string]interface{}{}
 	err = survey.Ask(questions, &t.surveyResult)
 	if err != nil {
-		logy.WithError(err).Error("start template survey")
-		return err
+		return errors.Wrap(err, "start template survey")
 	}
 
 	logy.Debugf("survey results %+v", t.surveyResult)
@@ -285,7 +282,7 @@ func (t *Templating) startTemplateSurvey(surveys *Survey) error {
 }
 
 // runSurveyTemplateHooks run all template hooks
-func (t *Templating) runSurveyTemplateHooks() {
+func (t *Templating) runSurveyTemplateHooks() error {
 	for i, hook := range t.surveys.AfterHooks {
 		ctx := logy.WithFields(logy.Fields{
 			"cmd":  hook.Cmd,
@@ -300,7 +297,7 @@ func (t *Templating) runSurveyTemplateHooks() {
 				Parse("{if " + hook.Enabled + "}true{end}")
 
 			if err != nil {
-				ctx.WithError(err).Error("create template")
+				return errors.Wrap(err, "create template")
 			}
 
 			var buf bytes.Buffer
@@ -319,10 +316,11 @@ func (t *Templating) runSurveyTemplateHooks() {
 		cmd.Stdin = os.Stdin
 		err := cmd.Run()
 		if err != nil {
-			logy.WithError(err).Errorf("Command %d ('%s') could not be executed", i, hook.Cmd)
-			log.Fatal(err)
+			return errors.Wrapf(err, "Command %d ('%s') could not be executed", i, hook.Cmd)
 		}
 	}
+
+	return nil
 }
 
 // generateTempFuncs create helper funcs and getters based on the survey result
@@ -355,7 +353,8 @@ func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) e
 	})
 
 	if err != nil {
-		ctx.WithError(err).Error("inside walk")
+		err := errors.Wrap(err, "walk failed")
+		ctx.WithError(err)
 		return err
 	}
 
@@ -374,7 +373,7 @@ func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) e
 
 	defer func() {
 		if r := recover(); r != nil {
-			ctx.Error("directory templating error")
+			ctx.Error("directory templating panic")
 		}
 	}()
 
@@ -385,14 +384,16 @@ func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) e
 		Parse(info.Name())
 
 	if err != nil {
-		ctx.WithError(err).Error("create template for directory")
+		err := errors.Wrap(err, "create template for directory")
+		ctx.WithError(err)
 		return err
 	}
 
 	var dirNameBuffer bytes.Buffer
 	err = tplDir.Execute(&dirNameBuffer, t.TemplateData)
 	if err != nil {
-		ctx.WithError(err).Error("execute template for directory")
+		err := errors.Wrap(err, "execute template for directory")
+		ctx.WithError(err)
 		return err
 	}
 
@@ -417,7 +418,8 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 	})
 
 	if err != nil {
-		ctx.WithError(err).Error("inside walk")
+		err := errors.Wrap(err, "walk failed")
+		ctx.WithError(err)
 		return err
 	}
 
@@ -440,7 +442,7 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 	t.ch <- func() {
 		defer func() {
 			if r := recover(); r != nil {
-				ctx.Error("templating error")
+				ctx.Error("file templating panic")
 			}
 		}()
 
@@ -523,7 +525,7 @@ func (t *Templating) Run() error {
 	tpl := t.getTemplateByName(t.CommandData.Template)
 
 	if tpl == nil {
-		return fmt.Errorf("template %s could not be found", t.CommandData.Template)
+		return errors.Errorf("template %s could not be found", t.CommandData.Template)
 	}
 
 	// clone repository
@@ -554,7 +556,6 @@ func (t *Templating) Run() error {
 	if err != nil {
 		ctx.WithError(err).Error("start template survey")
 		return err
-
 	}
 
 	// spinner progress
@@ -585,13 +586,13 @@ func (t *Templating) Run() error {
 		return walkDirErr
 	}
 
-	// rename and remove changed dirs
+	// rename and remove changed dirs from walk
 	for oldPath, newPath := range t.dirRenamings {
 		os.Rename(oldPath, newPath)
 		os.RemoveAll(oldPath)
 	}
 
-	// remove directories which are evaluated to empty string
+	// remove directories which are evaluated to empty string from walk
 	for _, path := range t.dirRemovings {
 		os.RemoveAll(path)
 	}
@@ -627,7 +628,11 @@ func (t *Templating) Run() error {
 
 	if t.surveyResult != nil {
 		logy.Debug("execute template hooks")
-		t.runSurveyTemplateHooks()
+		err := t.runSurveyTemplateHooks()
+		if err != nil {
+			logy.WithError(err).Error("template hooks failed")
+			return err
+		}
 	} else {
 		logy.Debug("skip template hooks")
 	}

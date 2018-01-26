@@ -49,7 +49,7 @@ var (
 )
 
 func init() {
-	logy.SetLevel(logy.WarnLevel)
+	logy.SetLevel(logy.DebugLevel)
 	cfg = config.ParseConfig(configName)
 
 	// Windows comaptible symbols
