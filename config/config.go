@@ -93,9 +93,9 @@ func ParseConfig(filename string) *Config {
 			}
 			if !found {
 				cfg.Templates = append(cfg.Templates, v)
-				break
 			}
 		}
+		logy.Infof("%+v", cfg.Templates)
 	}
 
 	return cfg
