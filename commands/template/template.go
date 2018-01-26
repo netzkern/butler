@@ -170,6 +170,15 @@ func (t *Templating) unpackTemplate(repoURL string, dest string) error {
 }
 
 func (t *Templating) packTemplate(tempDir, dest string) error {
+	// remove butler files
+	butlerSurveyFile := path.Clean(filepath.Join(tempDir, t.configName))
+	if utils.Exists(butlerSurveyFile) {
+		err := os.Remove(butlerSurveyFile)
+		if err != nil {
+			return errors.Wrap(err, "remove butler failes failed")
+		}
+	}
+
 	// move files from temp to cd
 	if dest == "." {
 		err := utils.MoveDir(tempDir, ".")
@@ -186,6 +195,7 @@ func (t *Templating) packTemplate(tempDir, dest string) error {
 			return errors.Wrap(err, "rename failed")
 		}
 	}
+
 	return nil
 }
 
@@ -194,6 +204,7 @@ func (t *Templating) cleanTemplate(tempDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "remove all failed")
 	}
+
 	return nil
 }
 
