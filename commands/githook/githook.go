@@ -92,7 +92,7 @@ func (g *Githook) Install() error {
 			}
 			logy.Debugf("hook '%s' installed", h)
 		} else {
-			logy.Debugf("template for hook '%s' could not be found in %s", h, path.Join(g.CommandData.Path, repoHookDir))
+			logy.Infof("template for hook '%s' could not be found in '%s'", h, path.Join(g.CommandData.Path, repoHookDir))
 		}
 
 	}
