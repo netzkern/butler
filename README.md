@@ -37,6 +37,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 ## Roadmap
 
+- [ ] Create templates for Sitecore, Kentico or other components
 - [ ] Jira Integration
 - [ ] Confluence Integration
 
