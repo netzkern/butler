@@ -65,3 +65,6 @@ typings/
 # butler
 src
 
+# temp dir
+butler*
+

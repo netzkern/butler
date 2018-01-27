@@ -73,21 +73,26 @@ func (g *Githook) Install() error {
 	for _, h := range g.CommandData.Hooks {
 		hookGitPath := path.Join(g.GitDir, ".git", "hooks", h)
 		hookRepoPath := path.Join(g.CommandData.Path, repoHookDir, h)
+
 		if !utils.Exists(hookGitPath) {
 			dir := path.Dir(hookGitPath)
-			logy.Debugf("Path '%s' created", dir)
+			logy.Debugf("path '%s' created", dir)
+			// when git wasn't initialized with a hook folder
 			err := utils.CreateDirIfNotExist(dir)
 			if err != nil {
-				logy.WithError(err).Error("Could not create directory")
+				logy.WithError(err).Error("could not create directory")
 			}
 		} else {
+			// remove existing hooks
+			// should be no problem because all hooks are versioned
 			os.Remove(hookGitPath)
 		}
+
 		if utils.Exists(hookRepoPath) {
-			logy.Debugf("Create symlink old: %s, new: %s", hookGitPath, hookRepoPath)
+			logy.Debugf("create symlink old: %s, new: %s", hookGitPath, hookRepoPath)
 			err := os.Link(hookRepoPath, hookGitPath)
 			if err != nil {
-				logy.WithError(err).Errorf("Could not link hook %s", h)
+				logy.WithError(err).Errorf("could not link hook %s", h)
 				return err
 			}
 			logy.Infof("hook '%s' installed", h)
