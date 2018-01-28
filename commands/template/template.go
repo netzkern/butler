@@ -750,7 +750,7 @@ func (t *Templating) Run() (err error) {
 			return
 		}
 	} else {
-		err = errors.New("abort templating")
+		err = errManualTerminiation
 		return
 	}
 
