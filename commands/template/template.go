@@ -10,10 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
-	"text/tabwriter"
 	"text/template"
 	"time"
 
@@ -57,6 +55,7 @@ type (
 		Variables    map[string]string
 		CommandData  *CommandData
 		TemplateData *TemplateData
+		TaskTracker  *TaskTracker
 
 		configName      string
 		excludedDirs    map[string]struct{}
@@ -90,6 +89,7 @@ func New(options ...Option) *Templating {
 		ch:           make(chan func(), runtime.NumCPU()),
 		dirRenamings: map[string]string{},
 		dirRemovings: []string{},
+		TaskTracker:  NewTaskTracker(),
 	}
 
 	v.templateFuncMap = template.FuncMap{
@@ -632,14 +632,11 @@ func (t *Templating) Run() (err error) {
 	/**
 	* Clone task
 	 */
-	startTimeClone := time.Now()
+	t.TaskTracker.Track("Clone")
 	cloneSpinner := defaultSpinner("Cloning repository...")
 	cloneSpinner.Start()
-
 	err = t.unpackTemplate(tpl.Url, tempDir)
-
-	endTimeClone := time.Since(startTimeClone).Seconds()
-
+	t.TaskTracker.UnTrack("Clone")
 	cloneSpinner.Stop()
 
 	if err != nil {
@@ -675,7 +672,7 @@ func (t *Templating) Run() (err error) {
 	/**
 	* Templating task
 	 */
-	startTimeTemplating := time.Now()
+	t.TaskTracker.Track("Template")
 
 	t.TemplateData = &TemplateData{
 		t.CommandData,
@@ -723,12 +720,12 @@ func (t *Templating) Run() (err error) {
 	t.stop()
 	templatingSpinner.Stop()
 
-	endTimeTemplating := time.Since(startTimeTemplating).Seconds()
+	t.TaskTracker.UnTrack("Template")
 
 	/**
 	* Template Hook task
 	 */
-	startTimeHooks := time.Now()
+	t.TaskTracker.Track("Hooks")
 
 	if t.surveyResult != nil {
 		logy.Debug("execute template hooks")
@@ -741,7 +738,7 @@ func (t *Templating) Run() (err error) {
 		logy.Debug("skip template hooks")
 	}
 
-	endTimeHooks := time.Since(startTimeHooks).Seconds()
+	t.TaskTracker.UnTrack("Hooks")
 
 	confirmed, err := t.confirmPackTemplate()
 	if confirmed {
@@ -758,6 +755,8 @@ func (t *Templating) Run() (err error) {
 	/**
 	* Git hook task
 	 */
+	t.TaskTracker.Track("Git Hooks")
+
 	commandGitHook := githook.New(
 		githook.WithGitDir(t.gitDir),
 		githook.WithCommandData(
@@ -776,23 +775,7 @@ func (t *Templating) Run() (err error) {
 		return
 	}
 
-	/**
-	* Print summary
-	 */
-	totalDuration := endTimeClone + endTimeTemplating + endTimeHooks
-	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 0, 4, 2, ' ', tabwriter.StripEscape)
-	fmt.Fprintln(w, "Clone\tTemplating\tHooks\tTotal\t")
-	fmt.Fprintf(w, "%s sec\t%s sec\t%s sec\t%s sec\t",
-		strconv.FormatFloat(endTimeClone, 'f', 2, 64),
-		strconv.FormatFloat(endTimeTemplating, 'f', 2, 64),
-		strconv.FormatFloat(endTimeHooks, 'f', 2, 64),
-		strconv.FormatFloat(totalDuration, 'f', 2, 64),
-	)
-	fmt.Println()
-	fmt.Fprintln(w)
-	w.Flush()
-	fmt.Printf("\nProject was created successfully!")
+	t.TaskTracker.UnTrack("Git Hooks")
 
 	return
 }
