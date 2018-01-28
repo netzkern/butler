@@ -610,7 +610,7 @@ func (t *Templating) Run() (err error) {
 		r := recover()
 
 		if r != nil {
-			logy.Errorf("%s", r)
+			logy.Errorf("recover: %s", r)
 		}
 
 		if err != nil && err != errManualTermination {
@@ -719,7 +719,7 @@ func (t *Templating) Run() (err error) {
 		}
 	}
 
-	logy.Debugf("file walk in path %s", tempDir)
+	logy.Debugf("file walk in path '%s'", tempDir)
 
 	walkErr := filepath.Walk(tempDir, t.walkFiles)
 
@@ -766,7 +766,6 @@ func (t *Templating) Run() (err error) {
 	/**
 	* Git hook task
 	 */
-
 	commandGitHook := githook.New(
 		githook.WithGitDir(t.gitDir),
 		githook.WithCommandData(
@@ -810,12 +809,14 @@ func (t *Templating) stop() {
 	t.wg.Wait()
 }
 
+// defaultSpinner create a spinner with good default settings
 func defaultSpinner(suffix string) *spinner.Spinner {
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Suffix = suffix
 	return s
 }
 
+// mapToEnvArray convert a map[string]interface{} to string arrays, compatible version to pass it to exec.Cmd
 func mapToEnvArray(s map[string]interface{}, prefix string) []string {
 	prefix = strings.ToUpper(prefix)
 	array := []string{}
