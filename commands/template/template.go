@@ -453,12 +453,6 @@ func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) e
 		return skipDirErr
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			ctx.Error("directory templating panic")
-		}
-	}()
-
 	// Template directory
 	tplDir, err := template.New(path).
 		Delims(startNameDelim, endNameDelim).
@@ -522,12 +516,6 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 
 	// template file
 	t.ch <- func() {
-		defer func() {
-			if r := recover(); r != nil {
-				ctx.Error("file templating panic")
-			}
-		}()
-
 		// Template filename
 		tplFilename, err := template.New(path).
 			Delims(startNameDelim, endNameDelim).
