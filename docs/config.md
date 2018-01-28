@@ -24,5 +24,5 @@ variables:
 #### Custom variables
 You can define custom variables which can be used inside project templates. Custom template variables have priority over local variables.
 
-### Distribute your config
+### Distribute config
 You can set the environment variable `BUTLER_CONFIG_URL` to any url to load your config from an external storage. This make it easy to distribute template updates across a company.
