@@ -28,6 +28,10 @@ import (
 	git "gopkg.in/src-d/go-git.v4"
 )
 
+var (
+	errManualTerminiation = errors.New("manual termination")
+)
+
 const (
 	startContentDelim = "butler{"
 	endContentDelim   = "}"
@@ -600,6 +604,32 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 
 // Run the command
 func (t *Templating) Run() (err error) {
+	// unpack template
+	tempDir, err := ioutil.TempDir(t.gitDir, "butler")
+	if err != nil {
+		err = errors.Wrap(err, "create temp folder failed")
+	}
+
+	// remove template when a panic or error occur
+	defer func() {
+		r := recover()
+
+		if r != nil {
+			logy.Errorf("%s", r)
+		}
+
+		if err != nil && err != errManualTerminiation {
+			logy.WithError(err)
+		}
+
+		err := t.cleanTemplate(tempDir)
+		if err != nil {
+			logy.WithError(err).Error("remove template failed")
+		}
+
+		logy.Debug("remove template artifacts")
+	}()
+
 	tpl := t.getTemplateByName(t.CommandData.Template)
 
 	if tpl == nil {
@@ -611,26 +641,9 @@ func (t *Templating) Run() (err error) {
 	cloneSpinner := defaultSpinner("Cloning repository...")
 	cloneSpinner.Start()
 
-	// unpack template
-	tempDir, err := ioutil.TempDir(t.gitDir, "butler")
-	if err != nil {
-		err = errors.Wrap(err, "create temp folder failed")
-	}
-
 	err = t.unpackTemplate(tpl.Url, tempDir)
 
 	endTimeClone := time.Since(startTimeClone).Seconds()
-
-	defer func() {
-		r := recover()
-		if err != nil || r != nil {
-			err = t.cleanTemplate(tempDir)
-			if err != nil {
-				logy.WithError(err).Error("clean template failed")
-			}
-			logy.Debug("clean template")
-		}
-	}()
 
 	cloneSpinner.Stop()
 
