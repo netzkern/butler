@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"text/tabwriter"
 	"text/template"
 	"time"
 
@@ -29,7 +30,7 @@ import (
 )
 
 var (
-	errManualTerminiation = errors.New("manual termination")
+	errManualTermination = errors.New("manual termination")
 )
 
 const (
@@ -427,6 +428,7 @@ func (t *Templating) generateTempFuncs() {
 
 }
 
+// walkDirectories run over all directories and collect renamed, removed items
 func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) error {
 	ctx := logy.WithFields(logy.Fields{
 		"path": path,
@@ -486,6 +488,7 @@ func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) e
 	return nil
 }
 
+// walkFiles run over all files and collect renamed items. Text files are proceed with the template engine.
 func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 	ctx := logy.WithFields(logy.Fields{
 		"path": path,
@@ -514,7 +517,6 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 
-	// template file
 	t.ch <- func() {
 		// Template filename
 		tplFilename, err := template.New(path).
@@ -592,14 +594,15 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 
 // Run the command
 func (t *Templating) Run() (err error) {
-	// unpack template
 	tempDir, err := ioutil.TempDir(t.gitDir, "butler")
 	if err != nil {
 		err = errors.Wrap(err, "create temp folder failed")
 		return
 	}
 
-	// remove template when a panic or error occur
+	// remove template artifacts when a panic or error occur
+	// when the user abort the process at the last step we will
+	// assign an "errManualTerminiation" to indicate an intentional action.
 	defer func() {
 		r := recover()
 
@@ -607,7 +610,7 @@ func (t *Templating) Run() (err error) {
 			logy.Errorf("%s", r)
 		}
 
-		if err != nil && err != errManualTerminiation {
+		if err != nil && err != errManualTermination {
 			logy.WithError(err)
 		}
 
@@ -626,6 +629,9 @@ func (t *Templating) Run() (err error) {
 		return
 	}
 
+	/**
+	* Clone task
+	 */
 	startTimeClone := time.Now()
 	cloneSpinner := defaultSpinner("Cloning repository...")
 	cloneSpinner.Start()
@@ -665,6 +671,10 @@ func (t *Templating) Run() (err error) {
 
 	// start multiple routines
 	t.startN(runtime.NumCPU())
+
+	/**
+	* Templating task
+	 */
 	startTimeTemplating := time.Now()
 
 	t.TemplateData = &TemplateData{
@@ -703,7 +713,6 @@ func (t *Templating) Run() (err error) {
 
 	logy.Debugf("file walk in path %s", tempDir)
 
-	// iterate through all files
 	walkErr := filepath.Walk(tempDir, t.walkFiles)
 
 	if walkErr != nil {
@@ -716,6 +725,9 @@ func (t *Templating) Run() (err error) {
 
 	endTimeTemplating := time.Since(startTimeTemplating).Seconds()
 
+	/**
+	* Template Hook task
+	 */
 	startTimeHooks := time.Now()
 
 	if t.surveyResult != nil {
@@ -739,10 +751,13 @@ func (t *Templating) Run() (err error) {
 			return
 		}
 	} else {
-		err = errManualTerminiation
+		err = errManualTermination
 		return
 	}
 
+	/**
+	* Git hook task
+	 */
 	commandGitHook := githook.New(
 		githook.WithGitDir(t.gitDir),
 		githook.WithCommandData(
@@ -761,14 +776,23 @@ func (t *Templating) Run() (err error) {
 		return
 	}
 
-	// print summary
+	/**
+	* Print summary
+	 */
 	totalDuration := endTimeClone + endTimeTemplating + endTimeHooks
-	fmt.Printf("\nClone: %s sec \nTemplating: %s sec\nHooks: %s\nTotal: %s sec",
+	w := new(tabwriter.Writer)
+	w.Init(os.Stdout, 0, 4, 2, ' ', tabwriter.StripEscape)
+	fmt.Fprintln(w, "Clone\tTemplating\tHooks\tTotal\t")
+	fmt.Fprintf(w, "%s sec\t%s sec\t%s sec\t%s sec\t",
 		strconv.FormatFloat(endTimeClone, 'f', 2, 64),
 		strconv.FormatFloat(endTimeTemplating, 'f', 2, 64),
 		strconv.FormatFloat(endTimeHooks, 'f', 2, 64),
 		strconv.FormatFloat(totalDuration, 'f', 2, 64),
 	)
+	fmt.Println()
+	fmt.Fprintln(w)
+	w.Flush()
+	fmt.Printf("\nProject was created successfully!")
 
 	return
 }
