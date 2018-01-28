@@ -94,18 +94,20 @@ func interactiveCliMode() {
 		err := command.Run()
 		if err != nil {
 			logy.WithError(err)
+		} else {
+			fmt.Println()
+			command.TaskTracker.PrintSummary(os.Stdout)
+			fmt.Printf("\nCommand executed!")
 		}
-		fmt.Println()
-		command.TaskTracker.PrintSummary(os.Stdout)
-		fmt.Printf("\nCommand executed!")
 	case "Install Git Hooks":
 		command := githook.New(githook.WithGitDir(cd))
 		command.StartCommandSurvey()
 		err = command.Run()
 		if err != nil {
 			logy.Errorf(err.Error())
+		} else {
+			fmt.Printf("\nCommand executed!")
 		}
-		fmt.Printf("\nCommand executed!")
 	case "Auto Update":
 		updater.ConfirmAndSelfUpdate(repository, version)
 	case "Version":

@@ -652,26 +652,29 @@ func (t *Templating) Run() (err error) {
 		"path": surveyFilePath,
 	})
 
-	templateConfig, err := ReadSurveyConfig(surveyFilePath)
-	if err != nil {
-		ctx.WithError(err).Error("read survey config")
-		return
-	}
-
-	// overwrite local variables with template variables
-	for k, v := range templateConfig.Variables {
-		if _, ok := t.Variables[k]; ok {
-			ctx.Debugf("overwrite local variable '%s' with template variable", k)
+	// template config isn't required
+	if utils.Exists(surveyFilePath) {
+		templateConfig, err := ReadSurveyConfig(surveyFilePath)
+		if err != nil {
+			ctx.WithError(err).Error("read survey config")
+			return err
 		}
-		t.Variables[k] = v
-	}
 
-	t.templateConfig = templateConfig
+		// overwrite local variables with template variables
+		for k, v := range templateConfig.Variables {
+			if _, ok := t.Variables[k]; ok {
+				ctx.Debugf("overwrite local variable '%s' with template variable", k)
+			}
+			t.Variables[k] = v
+		}
 
-	err = t.startTemplateSurvey(templateConfig)
-	if err != nil {
-		ctx.WithError(err).Error("start template survey")
-		return
+		t.templateConfig = templateConfig
+
+		err = t.startTemplateSurvey(templateConfig)
+		if err != nil {
+			ctx.WithError(err).Error("start template survey")
+			return err
+		}
 	}
 
 	// spinner progress
