@@ -31,17 +31,27 @@ questions:
     message: "Choose your database:"
     options: ["mongodb", "mssql", "redis"]
     required: true
-
+  - type: password
+    name: dbPassword
+    message: "Please enter a db password"
+    required: true
+  - type: confirm
+    name: printNode
+    message: "Should we print the Node Version?"
+    
 afterHooks:
   - cmd: node
-    args: ["v"]
+    args: ["-v"]
+    enabled: getPrintNode
+  - cmd: npm
+    args: ["-v"]
     enabled: eq getDb "mongodb"
 ```
 
 ### Configuration
 
 #### Questions
-- type: input, select, multiselect `string`
+- type: input, select, multiselect, password, confirm `string`
 - name: the indentifier of your question to access it in your template `string`
 - message: the question or statement `string`
 - options: the choices if you use select or mulitselect questions `[]string`
