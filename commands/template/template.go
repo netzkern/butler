@@ -585,7 +585,10 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 		// remove old file when the name was changed
 		if path != newPath {
 			ctx.Debug("delete due to different filename")
-			os.Remove(path)
+			err := os.Remove(path)
+			if err != nil {
+				ctx.WithError(err).Error("delete")
+			}
 		}
 	}
 
@@ -686,7 +689,7 @@ func (t *Templating) Run() (err error) {
 		t.generateTempFuncs()
 	}
 
-	logy.Debugf("dir walk in path %s", tempDir)
+	logy.Debugf("dir walk in path '%s'", tempDir)
 
 	// iterate through all directorys
 	walkDirErr := filepath.Walk(tempDir, t.walkDirectories)
@@ -700,12 +703,20 @@ func (t *Templating) Run() (err error) {
 	// rename and remove changed dirs from walk
 	for oldPath, newPath := range t.dirRenamings {
 		os.Rename(oldPath, newPath)
-		os.RemoveAll(oldPath)
+		err = os.RemoveAll(oldPath)
+		if err != nil {
+			logy.WithError(err).Error("remove all")
+			return
+		}
 	}
 
 	// remove directories which are evaluated to empty string from walk
 	for _, path := range t.dirRemovings {
-		os.RemoveAll(path)
+		err = os.RemoveAll(path)
+		if err != nil {
+			logy.WithError(err).Error("remove all")
+			return
+		}
 	}
 
 	logy.Debugf("file walk in path %s", tempDir)
