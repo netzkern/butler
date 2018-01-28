@@ -46,6 +46,7 @@ var (
 			},
 		},
 	}
+	hookCLIIcon = "✔ "
 )
 
 func init() {
@@ -53,6 +54,7 @@ func init() {
 	cfg = config.ParseConfig(configName)
 
 	// Windows compatible symbols
+	// @todo check terminal encoding
 	if runtime.GOOS == "windows" {
 		core.ErrorIcon = "X"
 		core.HelpIcon = "????"
@@ -60,6 +62,7 @@ func init() {
 		core.SelectFocusIcon = ">"
 		core.MarkedOptionIcon = "[x]"
 		core.UnmarkedOptionIcon = "[ ]"
+		hookCLIIcon = ""
 	}
 }
 
@@ -90,24 +93,30 @@ func interactiveCliMode() {
 			template.SetConfigName(surveyFilename),
 			template.WithGitDir(cd),
 		)
-		command.StartCommandSurvey()
-		err := command.Run()
+		err := command.StartCommandSurvey()
 		if err != nil {
 			logy.WithError(err)
-		} else {
-			fmt.Println()
-			command.TaskTracker.PrintSummary(os.Stdout)
-			fmt.Printf("\nCommand executed!")
+			return
 		}
+		err = command.Run()
+		if err != nil {
+			logy.WithError(err)
+		}
+		fmt.Println()
+		command.TaskTracker.PrintSummary(os.Stdout)
+		fmt.Printf("\n%sSuccessfully executed '%s' command!", hookCLIIcon, taskType)
 	case "Install Git Hooks":
 		command := githook.New(githook.WithGitDir(cd))
-		command.StartCommandSurvey()
+		err := command.StartCommandSurvey()
+		if err != nil {
+			logy.WithError(err)
+			return
+		}
 		err = command.Run()
 		if err != nil {
 			logy.Errorf(err.Error())
-		} else {
-			fmt.Printf("\nCommand executed!")
 		}
+		fmt.Printf("\n%sSuccessfully executed '%s' command!", hookCLIIcon, taskType)
 	case "Auto Update":
 		updater.ConfirmAndSelfUpdate(repository, version)
 	case "Version":

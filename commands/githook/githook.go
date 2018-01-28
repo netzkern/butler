@@ -89,10 +89,10 @@ func (g *Githook) Install() error {
 		}
 
 		if utils.Exists(hookRepoPath) {
-			logy.Debugf("create symlink old: %s, new: %s", hookGitPath, hookRepoPath)
+			logy.Debugf("create symlink old: '%s', new: '%s'", hookGitPath, hookRepoPath)
 			err := os.Link(hookRepoPath, hookGitPath)
 			if err != nil {
-				logy.WithError(err).Errorf("could not link hook %s", h)
+				logy.WithError(err).Errorf("could not link hook '%s'", h)
 				return err
 			}
 			logy.Infof("hook '%s' installed", h)
