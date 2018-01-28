@@ -736,7 +736,7 @@ func (t *Templating) Run() (err error) {
 	/**
 	* Template Hook task
 	 */
-	t.TaskTracker.Track("Hooks")
+	t.TaskTracker.Track("After hooks")
 
 	if t.surveyResult != nil {
 		logy.Debug("execute template hooks")
@@ -749,7 +749,7 @@ func (t *Templating) Run() (err error) {
 		logy.Debug("skip template hooks")
 	}
 
-	t.TaskTracker.UnTrack("Hooks")
+	t.TaskTracker.UnTrack("After hooks")
 
 	confirmed, err := t.confirmPackTemplate()
 	if confirmed {
@@ -766,7 +766,6 @@ func (t *Templating) Run() (err error) {
 	/**
 	* Git hook task
 	 */
-	t.TaskTracker.Track("Git Hooks")
 
 	commandGitHook := githook.New(
 		githook.WithGitDir(t.gitDir),
@@ -777,8 +776,6 @@ func (t *Templating) Run() (err error) {
 			},
 		),
 	)
-
-	logy.Debug("create git hooks")
 
 	err = commandGitHook.Run()
 	if err != nil {

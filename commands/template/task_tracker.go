@@ -12,10 +12,11 @@ type (
 	// TaskTracker help you to track the execution time of tasks and
 	// generate a summary for the cli
 	TaskTracker struct {
-		tracks map[string]*track
+		tracks []*track
 	}
 
 	track struct {
+		name     string
 		start    time.Time
 		duration float64
 	}
@@ -24,19 +25,22 @@ type (
 // NewTaskTracker create a new tracker
 func NewTaskTracker() *TaskTracker {
 	return &TaskTracker{
-		tracks: make(map[string]*track),
+		tracks: []*track{},
 	}
 }
 
 // Track the duration of the task
 func (t *TaskTracker) Track(name string) {
-	t.tracks[name] = &track{start: time.Now()}
+	t.tracks = append(t.tracks, &track{name, time.Now(), 0})
 }
 
 // UnTrack measure the duration in seconds
 func (t *TaskTracker) UnTrack(name string) {
-	if v, ok := t.tracks[name]; ok {
-		v.duration = time.Since(v.start).Seconds()
+	for _, v := range t.tracks {
+		if v.name == name {
+			v.duration = time.Since(v.start).Seconds()
+			break
+		}
 	}
 }
 
@@ -50,9 +54,9 @@ func (t *TaskTracker) PrintSummary(output io.Writer) {
 
 	var headline, column string
 
-	for name, t := range t.tracks {
-		headline += fmt.Sprintf("%s\t", name)
-		column += fmt.Sprintf("%s sec\t", strconv.FormatFloat(t.duration, 'f', 2, 64))
+	for _, v := range t.tracks {
+		headline += fmt.Sprintf("%s\t", v.name)
+		column += fmt.Sprintf("%s sec\t", strconv.FormatFloat(v.duration, 'f', 2, 64))
 	}
 
 	headline += fmt.Sprintf("Total\t")
