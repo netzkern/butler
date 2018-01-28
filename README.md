@@ -13,6 +13,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 ## Documentation
 
+* <a href="/docs/config.md"><code><b>Config</b></code></a>
 * <a href="/docs/templateSurveys.md"><code><b>Template Surveys</b></code></a>
 * <a href="/docs/templateSyntax.md"><code><b>Template Syntax</b></code></a>
 * <a href="/docs/gitHooks.md"><code><b>Git Hooks</b></code></a>

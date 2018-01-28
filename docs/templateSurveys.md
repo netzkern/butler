@@ -46,6 +46,9 @@ afterHooks:
   - cmd: npm
     args: ["-v"]
     enabled: eq getDb "mongodb"
+
+variables:
+  test: fooBar
 ```
 
 ### Configuration
@@ -66,12 +69,7 @@ Hooks are executed after the project is created. The hook pipeline is aborted wh
 - args: arguments `[]string`
 - enabled: a template expression which has to be evaluated to `true` when `false` the command is skipped
 
-## Access survey results in hook scripts
+#### Custom variables
+You define custom variables. In case of a conflict the template variables have priority over local variables.
 
-All results are available via environment variables:
-```
-BUTLER_DRINK=dwe
-BUTLER_COLOR=red
-BUTLER_LANG=c#,go,javascript
-BUTLER_DB=mongodb
-```
+

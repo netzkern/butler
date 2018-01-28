@@ -27,15 +27,9 @@ For directory or file names you have to use a different delimiter to save charac
 - `butler{ .Date }` Return the date (RFC3339)
 - `butler{ .Year }` Return the year (4-digits)
 
-## Define custom variables
-You can specify custom variables in the `butler.yml` file.
+## Access to custom variables
+Custom variables can be defined in the local `butler.yml` file or in the template `butler-survey.yml` file.
 
-```yaml
-variables:
-  company: netzkern
-  email: info@netzkern.de
-```
-Usage:
 ```
 butler{ .Vars.company }
 ```

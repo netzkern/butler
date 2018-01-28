@@ -27,8 +27,9 @@ type Hook struct {
 
 // Survey represents in the yml file
 type Survey struct {
-	Questions  []Question `yaml:"questions"`
-	AfterHooks []Hook     `yaml:"afterHooks"`
+	Questions  []Question        `yaml:"questions"`
+	AfterHooks []Hook            `yaml:"afterHooks"`
+	Variables  map[string]string `yaml:"variables"`
 }
 
 // ReadSurveyConfig reads the config and return a new survey

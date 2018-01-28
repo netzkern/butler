@@ -64,7 +64,7 @@ type (
 		wg              sync.WaitGroup
 		surveyResult    map[string]interface{}
 		templateFuncMap template.FuncMap
-		surveys         *Survey
+		templateConfig  *Survey
 		dirRenamings    map[string]string
 		dirRemovings    []string
 		gitDir          string
@@ -366,7 +366,7 @@ func (t *Templating) startTemplateSurvey(surveys *Survey) error {
 
 // runSurveyTemplateHooks run all template hooks
 func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
-	for i, hook := range t.surveys.AfterHooks {
+	for i, hook := range t.templateConfig.AfterHooks {
 		ctx := logy.WithFields(logy.Fields{
 			"cmd":  hook.Cmd,
 			"args": hook.Args,
@@ -418,7 +418,7 @@ func (t *Templating) generateTempFuncs() {
 	}
 
 	// create getter functions for the survey options for easier access
-	for _, question := range t.surveys.Questions {
+	for _, question := range t.templateConfig.Questions {
 		t.templateFuncMap["get"+casee.ToPascalCase(question.Name+"Question")] = (func(v Question) func() interface{} {
 			return func() interface{} {
 				return question
@@ -652,14 +652,23 @@ func (t *Templating) Run() (err error) {
 		"path": surveyFilePath,
 	})
 
-	surveys, err := ReadSurveyConfig(surveyFilePath)
+	templateConfig, err := ReadSurveyConfig(surveyFilePath)
 	if err != nil {
 		ctx.WithError(err).Error("read survey config")
 		return
 	}
-	t.surveys = surveys
 
-	err = t.startTemplateSurvey(surveys)
+	// overwrite local variables with template variables
+	for k, v := range templateConfig.Variables {
+		if _, ok := t.Variables[k]; ok {
+			ctx.Debugf("overwrite local variable '%s' with template variable", k)
+		}
+		t.Variables[k] = v
+	}
+
+	t.templateConfig = templateConfig
+
+	err = t.startTemplateSurvey(templateConfig)
 	if err != nil {
 		ctx.WithError(err).Error("start template survey")
 		return
