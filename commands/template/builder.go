@@ -33,6 +33,32 @@ func BuildSurveys(butlerSurveys ...*Survey) ([]*survey.Question, error) {
 					sqs.Validate = survey.Required
 				}
 				qs = append(qs, sqs)
+			case "password":
+				p := &survey.Password{
+					Message: question.Message,
+					Help:    question.Help,
+				}
+				sqs := &survey.Question{
+					Name:   question.Name,
+					Prompt: p,
+				}
+				if question.Required {
+					sqs.Validate = survey.Required
+				}
+				qs = append(qs, sqs)
+			case "confirm":
+				p := &survey.Confirm{
+					Message: question.Message,
+					Help:    question.Help,
+				}
+				sqs := &survey.Question{
+					Name:   question.Name,
+					Prompt: p,
+				}
+				if question.Required {
+					sqs.Validate = survey.Required
+				}
+				qs = append(qs, sqs)
 			case "select":
 				p := &survey.Select{
 					Message: question.Message,
@@ -82,6 +108,8 @@ func BuildSurveys(butlerSurveys ...*Survey) ([]*survey.Question, error) {
 					sqs.Validate = survey.Required
 				}
 				qs = append(qs, sqs)
+			default:
+				return nil, fmt.Errorf("invalid prompt type %s", question.Type)
 			}
 		}
 	}
