@@ -608,6 +608,7 @@ func (t *Templating) Run() (err error) {
 	tempDir, err := ioutil.TempDir(t.gitDir, "butler")
 	if err != nil {
 		err = errors.Wrap(err, "create temp folder failed")
+		return
 	}
 
 	// remove template when a panic or error occur
