@@ -510,11 +510,11 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 
 	skipFile, skipDirErr := t.Skip(path, info)
 	if skipFile {
-		ctx.Trace("skip file")
+		ctx.Debug("skip file")
 		return nil
 	}
 	if skipDirErr != nil {
-		ctx.Trace("skip directory")
+		ctx.Debug("skip directory")
 		return skipDirErr
 	}
 
@@ -523,82 +523,89 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 
+	// send job to workers
 	t.ch <- func() {
-		tplFilename, err := template.New(path).
-			Delims(startNameDelim, endNameDelim).
-			Funcs(t.templateFuncMap).
-			Parse(info.Name())
-
-		if err != nil {
-			ctx.WithError(err).Error("create template for filename")
-			return
-		}
-
-		var filenameBuffer bytes.Buffer
-		err = tplFilename.Execute(&filenameBuffer, t.TemplateData)
-		if err != nil {
-			ctx.WithError(err).Error("execute template for filename")
-			return
-		}
-
-		newFilename := filenameBuffer.String()
-		newPath := filepath.Join(filepath.Dir(path), newFilename)
-
-		// when filename contains a condition
-		if strings.TrimSpace(newPath) == "" {
-			err := os.Remove(path)
-			if err != nil {
-				ctx.WithError(err).Error("delete")
-			}
-			return
-		}
-
-		dat, err := ioutil.ReadFile(path)
-
-		if err != nil {
-			ctx.WithError(err).Error("read")
-			return
-		}
-
-		// Template file content
-		tmpl, err := template.New(newPath).
-			Delims(startContentDelim, endContentDelim).
-			Funcs(t.templateFuncMap).
-			Parse(string(dat))
-
-		if err != nil {
-			ctx.WithError(err).Error("parse")
-			return
-		}
-
-		f, err := os.Create(newPath)
-
-		if err != nil {
-			ctx.WithError(err).Error("create")
-			return
-		}
-
-		defer f.Close()
-
-		err = tmpl.Execute(f, t.TemplateData)
-
-		if err != nil {
-			ctx.WithError(err).Error("template")
-			return
-		}
-
-		// remove old file when the name was changed
-		if path != newPath {
-			ctx.Debug("delete due to different filename")
-			err := os.Remove(path)
-			if err != nil {
-				ctx.WithError(err).Error("delete")
-				return
-			}
-		}
+		t.templater(path, info.Name(), ctx)
 	}
 
 	return nil
+}
+
+// templater is responsible to parse files, rename or delete files and write the output back to the file.
+// t.TemplateData and t.templateFuncMap are read-only
+func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
+	tplFilename, err := template.New(path).
+		Delims(startNameDelim, endNameDelim).
+		Funcs(t.templateFuncMap).
+		Parse(filename)
+
+	if err != nil {
+		ctx.WithError(err).Error("create template for filename")
+		return
+	}
+
+	var filenameBuffer bytes.Buffer
+	err = tplFilename.Execute(&filenameBuffer, t.TemplateData)
+	if err != nil {
+		ctx.WithError(err).Error("execute template for filename")
+		return
+	}
+
+	newFilename := filenameBuffer.String()
+	newPath := filepath.Join(filepath.Dir(path), newFilename)
+
+	// when filename condition was evaluated to false
+	if strings.TrimSpace(newPath) == "" {
+		err := os.Remove(path)
+		if err != nil {
+			ctx.WithError(err).Error("delete")
+		}
+		return
+	}
+
+	dat, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		ctx.WithError(err).Error("read")
+		return
+	}
+
+	// Template file content
+	tmpl, err := template.New(newPath).
+		Delims(startContentDelim, endContentDelim).
+		Funcs(t.templateFuncMap).
+		Parse(string(dat))
+
+	if err != nil {
+		ctx.WithError(err).Error("parse")
+		return
+	}
+
+	f, err := os.Create(newPath)
+
+	if err != nil {
+		ctx.WithError(err).Error("create")
+		return
+	}
+
+	defer f.Close()
+
+	err = tmpl.Execute(f, t.TemplateData)
+
+	if err != nil {
+		ctx.WithError(err).Error("template")
+		return
+	}
+
+	// remove old file when the name was changed
+	if path != newPath {
+		ctx.Debug("delete due to different filename")
+		err := os.Remove(path)
+		if err != nil {
+			ctx.WithError(err).Error("delete")
+			return
+		}
+	}
 }
 
 // Run the command
