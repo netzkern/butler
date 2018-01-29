@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -263,9 +264,9 @@ func (t *Templating) getQuestions() []*survey.Question {
 			Name: "Name",
 			Prompt: &survey.Input{
 				Message: "What is the project name?",
-				Help:    "Allowed character 0-9, A-Z, _-",
+				Help:    "Allowed character [^a-zA-Z0-9_-]+",
 			},
-			Validate: survey.Required,
+			Validate: survey.ComposeValidators(survey.Required, projectNameValidator),
 		},
 		{
 			Name: "Description",
@@ -855,4 +856,17 @@ func toMap(s []string) map[string]struct{} {
 		m[v] = struct{}{}
 	}
 	return m
+}
+
+func projectNameValidator(val interface{}) error {
+	if str, ok := val.(string); ok {
+		reg, err := regexp.Compile("([^a-zA-Z0-9_-]+)")
+		if err != nil {
+			return err
+		}
+		if reg.MatchString(str) {
+			return errors.New("invalid name")
+		}
+	}
+	return nil
 }
