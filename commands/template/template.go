@@ -87,7 +87,7 @@ func New(options ...Option) *Templating {
 	v := &Templating{
 		excludedDirs: toMap(ExcludedDirs),
 		excludedExts: toMap(BinaryFileExt),
-		// the buffer size is equivalent to the worker size so they can't block each other.
+		// the buffer size is equivalent to the worker size this reduce the chance of wasted (blocking) resources.
 		ch:           make(chan func(), runtime.NumCPU()),
 		dirRenamings: map[string]string{},
 		dirRemovings: []string{},
