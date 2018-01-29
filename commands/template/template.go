@@ -264,9 +264,14 @@ func (t *Templating) getQuestions() []*survey.Question {
 			Name: "Name",
 			Prompt: &survey.Input{
 				Message: "What is the project name?",
-				Help:    "Allowed character [^a-zA-Z0-9_-]+",
+				Help:    "Allowed character [a-zA-Z0-9_-]{3,30}",
 			},
-			Validate: survey.ComposeValidators(survey.Required, projectNameValidator),
+			Validate: survey.ComposeValidators(
+				survey.Required,
+				survey.MinLength(3),
+				survey.MaxLength(30),
+				projectNameValidator,
+			),
 		},
 		{
 			Name: "Description",
