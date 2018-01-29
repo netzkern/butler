@@ -101,6 +101,7 @@ func interactiveCliMode() {
 		err = command.Run()
 		if err != nil {
 			logy.WithError(err)
+			return
 		}
 		fmt.Println()
 		command.TaskTracker.PrintSummary(os.Stdout)
@@ -114,7 +115,8 @@ func interactiveCliMode() {
 		}
 		err = command.Run()
 		if err != nil {
-			logy.Errorf(err.Error())
+			logy.WithError(err)
+			return
 		}
 		fmt.Printf("\n%sSuccessfully executed '%s' command!", hookCLIIcon, taskType)
 	case "Auto Update":
