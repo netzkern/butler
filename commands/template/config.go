@@ -51,7 +51,7 @@ func ReadSurveyConfig(path string) (*Survey, error) {
 	}
 
 	if err = validate(survey); err != nil {
-		logy.WithError(err).Error("invalid butler-survey.yml configuration")
+		logy.WithError(err).Error("invalid template configuration")
 		return nil, err
 	}
 
