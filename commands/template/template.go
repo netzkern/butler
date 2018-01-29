@@ -350,7 +350,7 @@ func (t *Templating) confirmPackTemplate() (bool, error) {
 func (t *Templating) startTemplateSurvey(surveys *Survey) error {
 	questions, err := BuildSurveys(surveys)
 	if err != nil {
-		return errors.Wrap(err, "build surveys")
+		return errors.Wrap(err, "build survey from template config")
 	}
 
 	t.surveyResult = map[string]interface{}{}

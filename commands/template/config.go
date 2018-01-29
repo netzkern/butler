@@ -4,30 +4,31 @@ import (
 	"io/ioutil"
 
 	logy "github.com/apex/log"
+	validator "gopkg.in/go-playground/validator.v9"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // Question represents a question in the yml file
 type Question struct {
-	Type     string      `json:"type"`
-	Name     string      `json:"name"`
+	Type     string      `json:"type" validate:"required"`
+	Name     string      `json:"name" validate:"required"`
 	Default  interface{} `json:"default"`
 	Options  []string    `json:"options"`
-	Message  string      `json:"message"`
+	Message  string      `json:"message" validate:"required"`
 	Required bool        `json:"required"`
 	Help     string      `json:"help"`
 }
 
 // Hook represent a hook in the yml file
 type Hook struct {
-	Cmd     string   `json:"cmd"`
+	Cmd     string   `json:"cmd" validate:"required"`
 	Args    []string `json:"args"`
 	Enabled string   `json:"enabled"`
 }
 
 // Survey represents in the yml file
 type Survey struct {
-	Questions  []Question             `yaml:"questions"`
+	Questions  []Question             `yaml:"questions" validate:"required,dive"`
 	AfterHooks []Hook                 `yaml:"afterHooks"`
 	Variables  map[string]interface{} `yaml:"variables"`
 	Deprecated bool                   `yaml:"deprecated"`
@@ -49,5 +50,24 @@ func ReadSurveyConfig(path string) (*Survey, error) {
 		return survey, err
 	}
 
+	if err = validate(survey); err != nil {
+		logy.WithError(err).Error("invalid butler-survey.yml configuration")
+		return nil, err
+	}
+
 	return survey, nil
+}
+
+func validate(cfg interface{}) error {
+	validate := validator.New()
+	validate.RegisterStructValidation(questionStructHasOptions, Question{})
+	return validate.Struct(cfg)
+}
+
+func questionStructHasOptions(sl validator.StructLevel) {
+	question := sl.Current().Interface().(Question)
+
+	if (question.Type == "select" || question.Type == "multiselect") && len(question.Options) == 0 {
+		sl.ReportError(question.Options, "options", "foptions", "optionsRequired", "")
+	}
 }
