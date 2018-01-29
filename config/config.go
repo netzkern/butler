@@ -17,12 +17,12 @@ var (
 
 type Template struct {
 	Name string `json:"name"`
-	Url  string `json:"url"`
+	URL  string `json:"url"`
 }
 
 type Config struct {
-	Templates []Template        `json:"templates"`
-	Variables map[string]string `json:"variables"`
+	Templates []Template             `json:"templates"`
+	Variables map[string]interface{} `json:"variables"`
 }
 
 // downloadConfig download full file from web
@@ -41,7 +41,7 @@ func downloadConfig(url string) ([]byte, error) {
 func ParseConfig(filename string) *Config {
 	cfg := &Config{
 		Templates: []Template{},
-		Variables: map[string]string{},
+		Variables: map[string]interface{}{},
 	}
 	dat, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -50,7 +50,7 @@ func ParseConfig(filename string) *Config {
 
 	cfgExt := &Config{
 		Templates: []Template{},
-		Variables: map[string]string{},
+		Variables: map[string]interface{}{},
 	}
 
 	err = yaml.Unmarshal(dat, &cfg)

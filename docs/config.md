@@ -2,24 +2,15 @@
 
 In the config you can define which project templates are accessible for the user.
 
-**butler.yml**
+## The butler.yml file
 ```yml
 templates:
-  - name: Example 1
-    url: https://github.com/netzkern/example-project-template.git
-  - name: Example 2
-    url: https://github.com/netzkern/example-project-template.git
+  - name:   The template name (string, required)
+    url:    The gir url to the template (string, required)
 
 variables:
-  company: netzkern
-  email: info@netzkern.de
+  test:     The value for custom variable
 ```
-
-### Configuration
-
-#### Templates
-- name: unique template name `string`
-- url: git repository url `string`
 
 #### Custom variables
 You can define custom variables to use them inside project templates. Custom template variables have priority over local variables.

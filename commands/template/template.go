@@ -52,7 +52,7 @@ type (
 	// Templating command
 	Templating struct {
 		Templates    []config.Template
-		Variables    map[string]string
+		Variables    map[string]interface{}
 		CommandData  *CommandData
 		TemplateData *TemplateData
 		TaskTracker  *TaskTracker
@@ -74,7 +74,7 @@ type (
 		Project *CommandData
 		Date    string
 		Year    int
-		Vars    map[string]string
+		Vars    map[string]interface{}
 	}
 )
 
@@ -121,7 +121,7 @@ func WithGitDir(dir string) Option {
 }
 
 // WithVariables option.
-func WithVariables(s map[string]string) Option {
+func WithVariables(s map[string]interface{}) Option {
 	return func(t *Templating) {
 		t.Variables = s
 	}
@@ -638,7 +638,7 @@ func (t *Templating) Run() (err error) {
 	t.TaskTracker.Track("Clone")
 	cloneSpinner := defaultSpinner("Cloning repository...")
 	cloneSpinner.Start()
-	err = t.unpackTemplate(tpl.Url, tempDir)
+	err = t.unpackTemplate(tpl.URL, tempDir)
 	t.TaskTracker.UnTrack("Clone")
 	cloneSpinner.Stop()
 
@@ -658,6 +658,10 @@ func (t *Templating) Run() (err error) {
 		if err != nil {
 			ctx.WithError(err).Error("read survey config")
 			return err
+		}
+
+		if templateConfig.Deprecated {
+			ctx.Infof("template is deprecated")
 		}
 
 		// overwrite local variables with template variables
