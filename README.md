@@ -15,8 +15,9 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 - Distributed configs
 
 ## Principles
-- Templates are simple git repositories
-- Everything is a template you don't have to deal with template directories
+- Project Templates are simple git repositories
+- Everything is a template you don't have to deal with `/template` directories
+- Required informations are asked during the bootstrapping process
 
 ## Usage
 
