@@ -10,7 +10,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 ## Features
 - Template Surveys
 - Conditional files and folders
-- After hooks to execute pre-processing scripts
+- After hooks for post-processing
 - Auto Update
 - Distributed configs
 
