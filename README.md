@@ -9,10 +9,14 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 ## Features
 - Template Surveys
-- Everything is a template
 - Conditional files and folders
+- After hooks to execute pre-processing scripts
 - Auto Update
 - Distributed configs
+
+## Principles
+- Templates are simple git repositories
+- Everything is a template you don't have to deal with template directories
 
 ## Usage
 
