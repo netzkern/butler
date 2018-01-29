@@ -510,11 +510,11 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 
 	skipFile, skipDirErr := t.Skip(path, info)
 	if skipFile {
-		ctx.Debug("skip file")
+		ctx.Trace("skip file")
 		return nil
 	}
 	if skipDirErr != nil {
-		ctx.Debug("skip directory")
+		ctx.Trace("skip directory")
 		return skipDirErr
 	}
 
@@ -524,7 +524,6 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 	}
 
 	t.ch <- func() {
-		// Template filename
 		tplFilename, err := template.New(path).
 			Delims(startNameDelim, endNameDelim).
 			Funcs(t.templateFuncMap).
@@ -594,6 +593,7 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 			err := os.Remove(path)
 			if err != nil {
 				ctx.WithError(err).Error("delete")
+				return
 			}
 		}
 	}
@@ -810,6 +810,9 @@ func (t *Templating) Run() (err error) {
 }
 
 // startN starts n loops.
+// This is called "Bounded Parallelism Pattern"
+// In a directory with many large files, this may allocate more memory than is available on the machine.
+// we can limit these allocations by bounding the number of files read in parallel
 func (t *Templating) startN(n int) {
 	for i := 0; i < n; i++ {
 		t.wg.Add(1)
@@ -818,6 +821,7 @@ func (t *Templating) startN(n int) {
 }
 
 // start loop.
+// we start a fixed number of workers to distribute the work
 func (t *Templating) start() {
 	defer t.wg.Done()
 	for fn := range t.ch {
@@ -826,6 +830,8 @@ func (t *Templating) start() {
 }
 
 // stop loop.
+// after finishing the walk we can safely close the channel
+// and unblock the "range" so that the workGroup can be finished
 func (t *Templating) stop() {
 	close(t.ch)
 	t.wg.Wait()
@@ -863,6 +869,8 @@ func toMap(s []string) map[string]struct{} {
 	return m
 }
 
+// projectNameValidator check if string is a valid project name
+// project name is a combination of alpha-numeric,-,_ characters
 func projectNameValidator(val interface{}) error {
 	if str, ok := val.(string); ok {
 		reg, err := regexp.Compile("([^a-zA-Z0-9_-]+)")
