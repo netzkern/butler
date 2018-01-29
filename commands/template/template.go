@@ -817,9 +817,9 @@ func (t *Templating) Run() (err error) {
 }
 
 // startN starts n loops.
-// This is called "Bounded Parallelism Pattern"
-// In a directory with many large files, this may allocate more memory than is available on the machine.
-// we can limit these allocations by bounding the number of files read in parallel
+// This is called "Bounded Parallelism Pattern" we can limit these allocations by bounding the number of files read in parallel.
+// If we would parallize all files and walk over a directory with many large files, this may allocate more memory than is available on the machine.
+// Therefore this way is really fast and will never be a bottleneck.
 func (t *Templating) startN(n int) {
 	for i := 0; i < n; i++ {
 		t.wg.Add(1)
