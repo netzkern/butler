@@ -15,7 +15,7 @@ Your are able to create an interactive survey before your template is proceed. T
 deprecated: Whether or not this template is deprecated (optional, boolean)
 
 questions:
-  - type:     The question type (input, select, multiselect, password, confirm, required)
+  - type:     The question type ([input, select, multiselect, password, confirm], required)
     name:     The indentifier of your question to access it in your template (string, required)
     message:  The question (string, required)
     options:  The available options only required for question types of select and multiselect ([]string)
