@@ -18,6 +18,7 @@ import (
 
 	logy "github.com/apex/log"
 	"github.com/briandowns/spinner"
+	"github.com/logrusorgru/aurora"
 	"github.com/netzkern/butler/commands/githook"
 	"github.com/netzkern/butler/config"
 	"github.com/netzkern/butler/utils"
@@ -62,6 +63,7 @@ type (
 		excludedDirs    map[string]struct{}
 		excludedExts    map[string]struct{}
 		ch              chan func()
+		chErr           chan error
 		wg              sync.WaitGroup
 		surveyResult    map[string]interface{}
 		templateFuncMap template.FuncMap
@@ -89,6 +91,7 @@ func New(options ...Option) *Templating {
 		excludedExts: toMap(BinaryFileExt),
 		// the buffer size is equivalent to the worker size this reduce the chance of wasted (blocking) resources.
 		ch:           make(chan func(), runtime.NumCPU()),
+		chErr:        make(chan error, runtime.NumCPU()),
 		dirRenamings: map[string]string{},
 		dirRemovings: []string{},
 		TaskTracker:  NewTaskTracker(),
@@ -340,10 +343,10 @@ func (t *Templating) StartCommandSurvey() error {
 	return nil
 }
 
-func (t *Templating) confirmPackTemplate() (bool, error) {
+func (t *Templating) confirmPackTemplate(msg string) (bool, error) {
 	packTemplate := false
 	prompt := &survey.Confirm{
-		Message: fmt.Sprintf("Do you really want to checkout to '%s' ?", t.CommandData.Path),
+		Message: msg,
 	}
 
 	err := survey.AskOne(prompt, &packTemplate, nil)
@@ -542,6 +545,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 
 	if err != nil {
 		ctx.WithError(err).Error("create template for filename")
+		t.chErr <- err
 		return
 	}
 
@@ -549,6 +553,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 	err = tplFilename.Execute(&filenameBuffer, t.TemplateData)
 	if err != nil {
 		ctx.WithError(err).Error("execute template for filename")
+		t.chErr <- err
 		return
 	}
 
@@ -560,6 +565,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 		err := os.Remove(path)
 		if err != nil {
 			ctx.WithError(err).Error("delete")
+			t.chErr <- err
 		}
 		return
 	}
@@ -568,6 +574,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 
 	if err != nil {
 		ctx.WithError(err).Error("read")
+		t.chErr <- err
 		return
 	}
 
@@ -579,6 +586,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 
 	if err != nil {
 		ctx.WithError(err).Error("parse")
+		t.chErr <- err
 		return
 	}
 
@@ -586,6 +594,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 
 	if err != nil {
 		ctx.WithError(err).Error("create")
+		t.chErr <- err
 		return
 	}
 
@@ -595,6 +604,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 
 	if err != nil {
 		ctx.WithError(err).Error("template")
+		t.chErr <- err
 		return
 	}
 
@@ -604,6 +614,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 		err := os.Remove(path)
 		if err != nil {
 			ctx.WithError(err).Error("delete")
+			t.chErr <- err
 			return
 		}
 	}
@@ -758,10 +769,20 @@ func (t *Templating) Run() (err error) {
 		return
 	}
 
-	t.stop()
+	go t.stop()
+
 	templatingSpinner.Stop()
 
 	t.TaskTracker.UnTrack("Template")
+
+	/**
+	* Let's collect all template errors
+	* It's blocked until chErr is closed
+	 */
+	var errCount int
+	for _ = range t.chErr {
+		errCount++
+	}
 
 	/**
 	* Template Hook task
@@ -781,7 +802,20 @@ func (t *Templating) Run() (err error) {
 
 	t.TaskTracker.UnTrack("After hooks")
 
-	confirmed, err := t.confirmPackTemplate()
+	var confirmMsg string
+	if errCount == 0 {
+		confirmMsg = fmt.Sprintf("Do you really want to checkout to '%s' ?", t.CommandData.Path)
+	} else if errCount == 1 {
+		confirmMsg = fmt.Sprintf("%s Do you really want to checkout to '%s' ?", aurora.Red(fmt.Sprintf("We found %d error.", errCount)), t.CommandData.Path)
+	} else {
+		confirmMsg = fmt.Sprintf("%s Do you really want to checkout to '%s' ?", aurora.Red(fmt.Sprintf("We found %d errors.", errCount)), t.CommandData.Path)
+	}
+
+	confirmed, err := t.confirmPackTemplate(confirmMsg)
+	if err != nil {
+		return
+	}
+
 	if confirmed {
 		err = t.packTemplate(tempDir, t.CommandData.Path)
 		if err != nil {
@@ -840,9 +874,11 @@ func (t *Templating) start() {
 // stop loop.
 // after finishing the walk we can safely close the channel
 // and unblock the "range" so that the workGroup can be finished
+// chErr is closed to continue with the templating process
 func (t *Templating) stop() {
 	close(t.ch)
 	t.wg.Wait()
+	close(t.chErr)
 }
 
 // defaultSpinner create a spinner with good default settings
