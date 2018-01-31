@@ -529,7 +529,10 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 
 	// send job to workers
 	t.ch <- func() {
-		t.templater(path, info.Name(), ctx)
+		err := t.templater(path, info.Name(), ctx)
+		if err != nil {
+			t.chErr <- err
+		}
 	}
 
 	return nil
@@ -537,7 +540,7 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 
 // templater is responsible to parse files, rename or delete files and write the output back to the file.
 // t.TemplateData and t.templateFuncMap are read-only
-func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
+func (t *Templating) templater(path, filename string, ctx *logy.Entry) error {
 	tplFilename, err := template.New(path).
 		Delims(startNameDelim, endNameDelim).
 		Funcs(t.templateFuncMap).
@@ -545,16 +548,14 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 
 	if err != nil {
 		ctx.WithError(err).Error("create template for filename")
-		t.chErr <- err
-		return
+		return err
 	}
 
 	var filenameBuffer bytes.Buffer
 	err = tplFilename.Execute(&filenameBuffer, t.TemplateData)
 	if err != nil {
 		ctx.WithError(err).Error("execute template for filename")
-		t.chErr <- err
-		return
+		return err
 	}
 
 	newFilename := filenameBuffer.String()
@@ -565,17 +566,16 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 		err := os.Remove(path)
 		if err != nil {
 			ctx.WithError(err).Error("delete")
-			t.chErr <- err
+			return err
 		}
-		return
+		return nil
 	}
 
 	dat, err := ioutil.ReadFile(path)
 
 	if err != nil {
 		ctx.WithError(err).Error("read")
-		t.chErr <- err
-		return
+		return err
 	}
 
 	// Template file content
@@ -586,16 +586,14 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 
 	if err != nil {
 		ctx.WithError(err).Error("parse")
-		t.chErr <- err
-		return
+		return err
 	}
 
 	f, err := os.Create(newPath)
 
 	if err != nil {
 		ctx.WithError(err).Error("create")
-		t.chErr <- err
-		return
+		return err
 	}
 
 	defer f.Close()
@@ -604,8 +602,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 
 	if err != nil {
 		ctx.WithError(err).Error("template")
-		t.chErr <- err
-		return
+		return err
 	}
 
 	// remove old file when the name was changed
@@ -614,10 +611,11 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) {
 		err := os.Remove(path)
 		if err != nil {
 			ctx.WithError(err).Error("delete")
-			t.chErr <- err
-			return
+			return err
 		}
 	}
+
+	return nil
 }
 
 // Run the command
