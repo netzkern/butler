@@ -15,17 +15,20 @@ var (
 	defaultConfigURL   = os.Getenv(butlerConfigURLEnv)
 )
 
+// Template represents the project template with informations about location
+// and name
 type Template struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
 }
 
+// Config represents the butler config
 type Config struct {
 	Templates []Template             `json:"templates"`
 	Variables map[string]interface{} `json:"variables"`
 }
 
-// downloadConfig download full file from web
+// downloadConfig download the full file from web
 func downloadConfig(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -58,7 +61,7 @@ func ParseConfig(filename string) *Config {
 		logy.Fatalf("could not unmarshal %s", err.Error())
 	}
 
-	// check config in env
+	// check for external configUrl in env
 	if defaultConfigURL != "" {
 		logy.Infof("loading config from %s=%s", butlerConfigURLEnv, defaultConfigURL)
 
@@ -76,26 +79,33 @@ func ParseConfig(filename string) *Config {
 			logy.Fatalf("could not unmarshal %s", err.Error())
 		}
 
-		// merge variables
-		for k, v := range cfgExt.Variables {
-			cfg.Variables[k] = v
-		}
-
-		// merge templates
-		for _, v := range cfgExt.Templates {
-			found := false
-			for j, v2 := range cfg.Templates {
-				if v.Name == v2.Name {
-					cfg.Templates[j] = v2
-					found = true
-					break
-				}
-			}
-			if !found {
-				cfg.Templates = append(cfg.Templates, v)
-			}
-		}
+		cfg = mergeConfigs(cfg, cfgExt)
 	}
 
 	return cfg
+}
+
+// merge extend b with a, whereby b take precedence
+func mergeConfigs(a, b *Config) *Config {
+	// merge variables
+	for k, v := range b.Variables {
+		a.Variables[k] = v
+	}
+
+	// merge templates
+	for _, v := range b.Templates {
+		found := false
+		for j, v2 := range a.Templates {
+			if v.Name == v2.Name {
+				a.Templates[j] = v2
+				found = true
+				break
+			}
+		}
+		if !found {
+			a.Templates = append(a.Templates, v)
+		}
+	}
+
+	return a
 }
