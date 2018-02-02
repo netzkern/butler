@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"sort"
 
+	"github.com/skratchdot/open-golang/open"
+
 	logy "github.com/apex/log"
 	"github.com/netzkern/butler/commands/githook"
 	"github.com/netzkern/butler/commands/template"
@@ -17,14 +19,15 @@ import (
 )
 
 const (
-	debug          = false
-	trace          = false
-	appName        = "Butler"
-	appDesc        = "Welcome to Butler, your personal assistent to scaffold new projects.\n"
-	author         = "netzkern AG"
-	repository     = "netzkern/butler"
-	surveyFilename = "butler-survey.yml"
-	configName     = "butler.yml"
+	debug           = false
+	trace           = false
+	appName         = "Butler"
+	appDesc         = "Welcome to Butler, your personal assistent to scaffold new projects.\n"
+	githubIssueLink = "https://github.com/netzkern/butler/issues/new"
+	author          = "netzkern AG"
+	repository      = "netzkern/butler"
+	surveyFilename  = "butler-survey.yml"
+	configName      = "butler.yml"
 )
 
 var (
@@ -34,6 +37,7 @@ var (
 		"Project Templates",
 		"Install Git Hooks",
 		"Auto Update",
+		"Report a bug",
 		"Version",
 	}
 	qs = []*survey.Question{
@@ -81,7 +85,7 @@ func interactiveCliMode() {
 
 	cd, err := os.Getwd()
 	if err != nil {
-		logy.WithError(err)
+		logy.WithError(err).Error("getwd")
 		return
 	}
 
@@ -95,12 +99,12 @@ func interactiveCliMode() {
 		)
 		err := command.StartCommandSurvey()
 		if err != nil {
-			logy.WithError(err)
+			logy.WithError(err).Error("start survey")
 			return
 		}
 		err = command.Run()
 		if err != nil {
-			logy.WithError(err)
+			logy.WithError(err).Error("run command")
 			return
 		}
 		fmt.Println()
@@ -110,17 +114,23 @@ func interactiveCliMode() {
 		command := githook.New(githook.WithGitDir(cd))
 		err := command.StartCommandSurvey()
 		if err != nil {
-			logy.WithError(err)
+			logy.WithError(err).Error("start survey")
 			return
 		}
 		err = command.Run()
 		if err != nil {
-			logy.WithError(err)
+			logy.WithError(err).Error("run command")
 			return
 		}
 		fmt.Printf("\n%sSuccessfully executed '%s' command!", hookCLIIcon, taskType)
 	case "Auto Update":
 		updater.ConfirmAndSelfUpdate(repository, version)
+	case "Report a bug":
+		err := open.Start(githubIssueLink)
+		if err != nil {
+			logy.WithError(err).Error("report a bug")
+			return
+		}
 	case "Version":
 		fmt.Printf("Version: %s\n", version)
 	default:
