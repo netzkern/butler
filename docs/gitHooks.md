@@ -3,7 +3,7 @@
 ## Usage
 
 1. Create a folder `$GIT_DIR/git_hooks` in the root directory of your template.
-2. Create a git hook specific template in `git_hooks` e.g `$GIT_DIR/git_hooks/pre-commit`
+2. Create a git hook specific file in `git_hooks` e.g `$GIT_DIR/git_hooks/pre-commit`
 3. Run Butler and run `Install Git Hooks`
 
 **pre-commit**
