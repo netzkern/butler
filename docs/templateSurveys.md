@@ -12,7 +12,8 @@ Your are able to create an interactive survey before your template is proceed. T
 ## The butler-survey.yml file
 
 ```
-deprecated: Whether or not this template is deprecated (optional, boolean)
+deprecated:     Whether or not this template is deprecated (optional, boolean)
+butlerVersion:  The required butler version (optional, semver string)
 
 questions:
   - type:     The question type ([input, select, multiselect, password, confirm], required)

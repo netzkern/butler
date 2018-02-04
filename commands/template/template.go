@@ -17,6 +17,7 @@ import (
 	"time"
 
 	logy "github.com/apex/log"
+	"github.com/blang/semver"
 	"github.com/briandowns/spinner"
 	"github.com/logrusorgru/aurora"
 	"github.com/netzkern/butler/commands/githook"
@@ -71,6 +72,7 @@ type (
 		dirRenamings    map[string]string
 		dirRemovings    []string
 		gitDir          string
+		butlerVersion   semver.Version
 	}
 	// TemplateData basic template data
 	TemplateData struct {
@@ -136,6 +138,13 @@ func WithVariables(s map[string]interface{}) Option {
 func SetConfigName(s string) Option {
 	return func(t *Templating) {
 		t.configName = s
+	}
+}
+
+// WithButlerVersion option.
+func WithButlerVersion(s string) Option {
+	return func(t *Templating) {
+		t.butlerVersion = semver.MustParse(s)
 	}
 }
 
@@ -681,6 +690,28 @@ func (t *Templating) Run() (err error) {
 		if err != nil {
 			ctx.WithError(err).Error("read survey config")
 			return err
+		}
+
+		// check compatibility
+		if templateConfig.ButlerVersion != "" {
+			butlerVersions, err := semver.ParseRange(templateConfig.ButlerVersion)
+			if err != nil {
+				err := fmt.Errorf(
+					"could not parse required butler version '%s'",
+					templateConfig.ButlerVersion,
+				)
+				ctx.WithError(err).Error("invalid semver")
+				return err
+			}
+			if !butlerVersions(t.butlerVersion) {
+				err := fmt.Errorf(
+					"the required butler version '%s' does not match with your current version '%s'",
+					t.butlerVersion.String(),
+					templateConfig.ButlerVersion,
+				)
+				ctx.WithError(err).Error("template requirement")
+				return err
+			}
 		}
 
 		if templateConfig.Deprecated {

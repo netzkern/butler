@@ -32,7 +32,7 @@ const (
 
 var (
 	cfg      *config.Config
-	version  = "master"
+	version  = "0.0.32"
 	commands = []string{
 		"Project Templates",
 		"Install Git Hooks",
@@ -95,6 +95,7 @@ func interactiveCliMode() {
 			template.WithTemplates(cfg.Templates),
 			template.WithVariables(cfg.Variables),
 			template.SetConfigName(surveyFilename),
+			template.WithButlerVersion(version),
 			template.WithGitDir(cd),
 		)
 		err := command.StartCommandSurvey()
