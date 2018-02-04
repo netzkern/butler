@@ -13,7 +13,7 @@ Your are able to create an interactive survey before your template is proceed. T
 
 ```
 deprecated:     Whether or not this template is deprecated (optional, boolean)
-butlerVersion:  The required butler version (optional, semver string)
+butlerVersion:  The required butler version (optional, semver range string e.g "1.0.x" or ">1.0.0 <2.0.0 || >=3.0.0")
 
 questions:
   - type:     The question type ([input, select, multiselect, password, confirm], required)
