@@ -104,13 +104,7 @@ func New(options ...Option) *Templating {
 		"toPascalCase": casee.ToPascalCase,
 		"toSnakeCase":  casee.ToSnakeCase,
 		"join":         strings.Join,
-		"uuid": func() (string, error) {
-			ui, err := uuid.NewV4()
-			if err != nil {
-				return "", err
-			}
-			return ui.String(), nil
-		},
+		"uuid":         uuid.NewV4,
 	}
 
 	for _, o := range options {
