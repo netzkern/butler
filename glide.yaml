@@ -1,0 +1,31 @@
+package: github.com/netzkern/butler
+import:
+- package: github.com/apex/log
+  version: ^1.0.0
+- package: github.com/blang/semver
+  version: ^3.5.1
+- package: github.com/briandowns/spinner
+  version: ^1.0.0
+- package: github.com/logrusorgru/aurora
+- package: github.com/pinzolo/casee
+- package: github.com/pkg/errors
+  version: ^0.8.0
+- package: github.com/rhysd/go-github-selfupdate
+  subpackages:
+  - selfupdate
+- package: github.com/satori/go.uuid
+  version: ^1.2.0
+- package: github.com/skratchdot/open-golang
+  subpackages:
+  - open
+- package: github.com/urfave/cli
+  version: ^1.20.0
+- package: gopkg.in/AlecAivazis/survey.v1
+  version: ^1.4.1
+  subpackages:
+  - core
+- package: gopkg.in/go-playground/validator.v9
+  version: ^9.9.4
+- package: gopkg.in/src-d/go-git.v4
+  version: ^4.1.0
+- package: gopkg.in/yaml.v2
