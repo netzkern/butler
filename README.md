@@ -1,9 +1,9 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/netzkern/butler/master/logo.png" alt="butler" style="max-width:100%;">
+<img src="/logo.png" alt="butler" style="max-width:100%;">
 </p>
 
 <p align="center">
-<img src="butler-demo.gif" alt="butler" style="max-width:60%;">
+<img src="/butler-demo.gif" alt="butler" style="max-width:100%;">
 </p>
 
 Butler is an automatation tool to scaffold new projects in only a few seconds. We provide a powerful interactive cli.
