@@ -6,7 +6,7 @@ In the config you can define which project templates are accessible for the user
 ```yml
 templates:
   - name:   The template name (string, required)
-    url:    The gir url to the template (string, required)
+    url:    The git url to the template (string, required)
 
 variables:
   test:     The value for custom variable
