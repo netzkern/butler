@@ -57,7 +57,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 ## Acknowledgements
 
-This project is kindly sponsored by [netzkern](http://netzkern.de).[netzkern is hiring!](http://karriere.netzkern.de/)
+This project is kindly sponsored by [netzkern](http://netzkern.de). We're [hiring!](http://karriere.netzkern.de/)
 
 ## License
 
