@@ -42,7 +42,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 - **Report a bug:** This command will open a new Github issue.
 - **Version:** This command will return the current version of Butler.
 
-### Maintenance
+### Maintenance across teams
 
 - Butler is able to update itself. The latest Github release is used.
 - Stay up-to-date with new templates without to update your config manually just set the environment variable `BUTLER_CONFIG_URL` to [butler.yml on master](https://raw.githubusercontent.com/netzkern/butler/master/butler.yml) and both configs are merged.
@@ -57,7 +57,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 ## Acknowledgements
 
-This project is kindly sponsored by [netzkern](http://netzkern.de) [is hiring!](http://karriere.netzkern.de/)
+This project is kindly sponsored by [netzkern](http://netzkern.de).[netzkern is hiring!](http://karriere.netzkern.de/)
 
 ## License
 
