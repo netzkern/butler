@@ -1,6 +1,7 @@
 <p align="center">
 <img src="https://raw.githubusercontent.com/netzkern/butler/master/logo.png" alt="butler" style="max-width:100%;">
 </p>
+
 <p align="center">
 <img src="butler-demo.gif" alt="butler" style="max-width:60%;">
 </p>
