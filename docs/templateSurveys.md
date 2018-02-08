@@ -38,4 +38,4 @@ Hooks are executed after the project is created. The hook pipeline is aborted wh
 
 
 #### Custom variables
-You define custom variables. In case of a conflict the template variables have priority over local variables.
+You can define custom variables. In case of a conflict the template variables have priority over local variables.
