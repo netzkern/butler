@@ -262,7 +262,7 @@ func (t *Templating) getQuestions() []*survey.Question {
 			Name:     "Template",
 			Validate: survey.Required,
 			Prompt: &survey.Select{
-				Message: "What system are you using?",
+				Message: "Please select a template",
 				Options: t.getTemplateOptions(),
 				Help:    "You can add additional templates in your config",
 			},
