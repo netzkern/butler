@@ -1,6 +1,6 @@
 # Butler Git Hooks
 
-You don't need any tooling to create hooks. We have agreed on a simple convention. Your project is shipped with a `git_hooks` folder which has the same directory structure like the git `hooks` folder. In this way we can create symbol link and make them versionable with the git.
+You don't need any tooling to create hooks. We have agreed on a simple convention. Your project is shipped with a `git_hooks` folder which has the same directory structure like the git `hooks` folder. In this way we can create symbol links and make them versionable with git.
 
 If you create a new git hook file you have to excute the command again.
 
