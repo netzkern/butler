@@ -16,7 +16,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 ## Principles
 - Project Templates are simple git repositories
-- Everything is a template you don't have to deal with `/template` directories
+- Everything is a template you don't have to deal with `/template` directories or `.tmpl` files
 - Required informations are asked during the bootstrapping process
 
 ## Usage
