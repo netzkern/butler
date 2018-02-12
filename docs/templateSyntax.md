@@ -19,7 +19,7 @@ For directory or file names you have to use a different delimiter to save charac
 - Directories
 - Text files (.html, .md, .txt, .cshtml, .cs, .js ...)
 
-_Butler maintain a [list](https://github.com/netzkern/butler/blob/master/commands/template/binary_extensions.go) of extensions from binary files and disallow the parsing of these files_
+_Butler maintain a [list](https://github.com/netzkern/butler/blob/master/commands/template/binary_extensions.go) of extensions of binary files and disallow the parsing of these files_
 
 # Built in
 
