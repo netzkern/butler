@@ -19,7 +19,6 @@ import (
 	logy "github.com/apex/log"
 	"github.com/blang/semver"
 	"github.com/briandowns/spinner"
-	"github.com/logrusorgru/aurora"
 	"github.com/netzkern/butler/commands/githook"
 	"github.com/netzkern/butler/config"
 	"github.com/netzkern/butler/utils"
@@ -829,9 +828,9 @@ func (t *Templating) Run() (err error) {
 	if errCount == 0 {
 		confirmMsg = fmt.Sprintf("Do you really want to checkout to '%s' ?", t.CommandData.Path)
 	} else if errCount == 1 {
-		confirmMsg = fmt.Sprintf("%s Do you really want to checkout to '%s' ?", aurora.Red(fmt.Sprintf("We found %d error.", errCount)), t.CommandData.Path)
+		confirmMsg = fmt.Sprintf("%s Do you really want to checkout to '%s' ?", fmt.Sprintf("We found %d error.", errCount), t.CommandData.Path)
 	} else {
-		confirmMsg = fmt.Sprintf("%s Do you really want to checkout to '%s' ?", aurora.Red(fmt.Sprintf("We found %d errors.", errCount)), t.CommandData.Path)
+		confirmMsg = fmt.Sprintf("%s Do you really want to checkout to '%s' ?", fmt.Sprintf("We found %d errors.", errCount), t.CommandData.Path)
 	}
 
 	confirmed, err := t.confirmPackTemplate(confirmMsg)

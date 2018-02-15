@@ -23,7 +23,7 @@ type Config struct {
 	Variables            map[string]interface{} `json:"variables"`
 	ConfigURL            string                 `split_words:"true"`
 	ConfluenceURL        string                 `split_words:"true"`
-	ConfluenceAuthMethod string                 `split_words:"true" default:"basic"`
+	ConfluenceAuthMethod string                 `split_words:"true"`
 	ConfluenceBasicAuth  []string               `split_words:"true"`
 }
 
@@ -69,31 +69,10 @@ func ParseConfig(filename string) *Config {
 		ctx.Fatalf("could not inject env variables %s", err.Error())
 	}
 
-	// validate confluence configuration
-	if cfg.ConfluenceAuthMethod != "" {
-		if cfg.ConfluenceAuthMethod == "basic" {
-			if len(cfg.ConfluenceBasicAuth) != 2 {
-				ctx.WithField("ENV", "CONFLUENCE_BASIC_AUTH").
-					Fatalf("invalid basic auth credentials")
-			}
-		} else {
-			ctx.WithField("ENV", "CONFLUENCE_AUTH_METHOD").
-				Fatalf("only basic auth is currently supported")
-		}
-	}
-
-	if cfg.ConfluenceURL != "" {
-		_, err := url.ParseRequestURI(cfg.ConfluenceURL)
-		if err != nil {
-			ctx.WithField("ENV", "BUTLER_CONFLUENCE_URL").
-				Fatalf("invalid url")
-		}
-	}
-
 	// check for external configUrl in env
 	if cfg.ConfigURL != "" {
 		ctx.WithField("url", cfg.ConfigURL).
-			Infof("loading external config")
+			Debugf("loading external config")
 
 		u, err := url.ParseRequestURI(cfg.ConfigURL)
 		if err != nil {
