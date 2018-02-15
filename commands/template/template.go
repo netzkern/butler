@@ -300,8 +300,8 @@ func (t *Templating) getQuestions() []*survey.Question {
 	return qs
 }
 
-// Skip returns an error when a directory should be skipped or true with a file
-func (t *Templating) Skip(path string, info os.FileInfo) (bool, error) {
+// skip returns an error when a directory should be skipped or true with a file
+func (t *Templating) skip(path string, info os.FileInfo) (bool, error) {
 	name := info.Name()
 	// ignore hidden dirs and files
 	if len(name) > 1 && strings.HasPrefix(name, ".") {
@@ -460,7 +460,7 @@ func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) e
 		return nil
 	}
 
-	skipFile, skipDirErr := t.Skip(path, info)
+	skipFile, skipDirErr := t.skip(path, info)
 	if skipFile {
 		return nil
 	}
@@ -515,7 +515,7 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 		return err
 	}
 
-	skipFile, skipDirErr := t.Skip(path, info)
+	skipFile, skipDirErr := t.skip(path, info)
 	if skipFile {
 		ctx.Debug("skip file")
 		return nil

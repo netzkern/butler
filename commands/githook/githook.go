@@ -69,7 +69,7 @@ func WithCommandData(cd *CommandData) Option {
 }
 
 // Install will create hard links from local git_hooks to the corresponding git hooks
-func (g *Githook) Install() error {
+func (g *Githook) install() error {
 	for _, h := range g.CommandData.Hooks {
 		hookGitPath := path.Join(g.GitDir, ".git", "hooks", h)
 		hookRepoPath := path.Join(g.CommandData.Path, repoHookDir, h)
@@ -145,5 +145,5 @@ func (g *Githook) StartCommandSurvey() error {
 
 // Run the command
 func (g *Githook) Run() error {
-	return g.Install()
+	return g.install()
 }
