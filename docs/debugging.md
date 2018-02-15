@@ -1,6 +1,6 @@
 # Butler debugging
 
-Enable different log level (debug, info, warn, error):
+Enable different log level (debug, info, warn, error, fatal):
 
 ```
 $ butler --logLevel=info ui

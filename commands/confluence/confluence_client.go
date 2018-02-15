@@ -63,7 +63,7 @@ func (c *Client) sendRequest(req *http.Request) ([]byte, error) {
 	case http.StatusServiceUnavailable:
 		return nil, errors.Errorf("service is not available (%s)", resp.Status)
 	case http.StatusInternalServerError:
-		return nil, errors.Errorf("Internal server error: %s", resp.Status)
+		return nil, errors.Errorf("internal server error: %s", resp.Status)
 	}
 
 	return nil, errors.Wrapf(err, "unknown response status %s", resp.Status)
