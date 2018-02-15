@@ -11,7 +11,7 @@ Tools like Jira, Confluence in Butler.
 
 > Bootstraping projects should be fun!
 
-# Features
+## Features
 
 - Template Surveys
 - Conditional files and folders
@@ -19,20 +19,20 @@ Tools like Jira, Confluence in Butler.
 - Auto Update
 - Distributed configs
 
-# Principles
+## Principles
 
 - Project Templates are simple git repositories
 - Everything is a template you don't have to deal with `/template` directories
   or `.tmpl` files
 - Required informations are asked during the bootstrapping process
 
-# Usage
+## Usage
 
 1. [Download here](https://github.com/netzkern/butler/releases)
 2. Install in `PATH`
 3. Run `butler`
 
-# Documentation
+## Documentation
 
 - [`**Config**`](/docs/config.md)
 - [`**Template Surveys**`](/docs/templateSurveys.md)
@@ -41,7 +41,7 @@ Tools like Jira, Confluence in Butler.
 - [`**Debugging**`](/docs/debugging.md)
 - [`**Commands**`](#commands)
 
-# Commands
+## Commands
 
 - **Project Templates:** This command will create a new project based on the
   selected template.
@@ -66,11 +66,11 @@ Tools like Jira, Confluence in Butler.
 
 - [**Dustin Deus**](https://github.com/StarpTech), <https://twitter.com/dustindeus>, <https://www.npmjs.com/~starptech>
 
-# Acknowledgements
+## Acknowledgements
 
 This project is kindly sponsored by [netzkern](http://netzkern.de). We're [hiring!](http://karriere.netzkern.de/)
 
-# License
+## License
 
 Licensed under [MIT](./LICENSE).
 
