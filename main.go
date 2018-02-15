@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"runtime"
 	"sort"
@@ -31,28 +32,45 @@ const (
 	configName      = "butler.yml"
 )
 
+type commandSelection struct {
+	Action string
+}
+
 var (
-	cfg      *config.Config
-	version  = "0.0.32"
-	commands = []string{
-		"Project Templates",
+	cfg             *config.Config
+	version         = "0.0.32"
+	primaryCommands = []string{
+		"Create Project",
 		"Create Confluence Space",
-		"Install Git Hooks",
+		"Create Git Hooks",
+		"Maintenance",
+		"Exit",
+	}
+	devCommands = []string{
 		"Auto Update",
 		"Report a bug",
 		"Version",
 	}
-	qs = []*survey.Question{
+	primaryQs = []*survey.Question{
 		{
 			Name:     "action",
 			Validate: survey.Required,
 			Prompt: &survey.Select{
 				Message: "How can I help you, Sir?",
-				Options: commands,
+				Options: primaryCommands,
 			},
 		},
 	}
-	hookCLIIcon = "✔ "
+	devQs = []*survey.Question{
+		{
+			Name:     "action",
+			Validate: survey.Required,
+			Prompt: &survey.Select{
+				Message: "How can I help you, Sir?",
+				Options: devCommands,
+			},
+		},
+	}
 )
 
 func init() {
@@ -68,88 +86,35 @@ func init() {
 		core.SelectFocusIcon = ">"
 		core.MarkedOptionIcon = "[x]"
 		core.UnmarkedOptionIcon = "[ ]"
-		hookCLIIcon = ""
 	}
 }
 
-func interactiveCliMode() {
-	fmt.Println(appDesc)
+func showPrimaryCommands() *commandSelection {
+	answer := &commandSelection{}
 
-	answers := struct {
-		Action string
-	}{}
-
-	err := survey.Ask(qs, &answers)
+	err := survey.Ask(primaryQs, answer)
 	if err != nil {
-		logy.Errorf(err.Error())
-		return
+		logy.Fatal(err.Error())
 	}
 
-	cd, err := os.Getwd()
+	return answer
+}
+
+func showMaintananceCommands() *commandSelection {
+	answer := &commandSelection{}
+
+	err := survey.Ask(devQs, answer)
 	if err != nil {
-		logy.WithError(err).Error("getwd")
-		return
+		logy.Fatal(err.Error())
 	}
 
-	switch taskType := answers.Action; taskType {
-	case "Project Templates":
-		command := template.New(
-			template.WithTemplates(cfg.Templates),
-			template.WithVariables(cfg.Variables),
-			template.SetConfigName(surveyFilename),
-			template.WithButlerVersion(version),
-			template.WithGitDir(cd),
-		)
-		err := command.StartCommandSurvey()
-		if err != nil {
-			logy.WithError(err).Error("start survey")
-			return
-		}
-		err = command.Run()
-		if err != nil {
-			logy.WithError(err).Error("run command")
-			return
-		}
-		fmt.Println()
-		command.TaskTracker.PrintSummary(os.Stdout)
-		fmt.Printf("\n%sSuccessfully executed '%s' command!", hookCLIIcon, taskType)
-	case "Create Confluence Space":
-		client := confluence.NewClient(
-			confluence.WithAuth(
-				confluence.BasicAuth(
-					cfg.ConfluenceBasicAuth[0],
-					cfg.ConfluenceBasicAuth[1],
-				),
-			),
-		)
-		command := confluence.NewSpace(
-			confluence.WithEndpoint(cfg.ConfluenceURL),
-			confluence.WithClient(client),
-		)
-		err := command.StartCommandSurvey()
-		if err != nil {
-			logy.WithError(err).Error("start survey")
-			return
-		}
-		_, err = command.Run()
-		if err != nil {
-			logy.WithError(err).Error("run command")
-			return
-		}
-		fmt.Printf("\n%sSuccessfully executed '%s' command!", hookCLIIcon, taskType)
-	case "Install Git Hooks":
-		command := githook.New(githook.WithGitDir(cd))
-		err := command.StartCommandSurvey()
-		if err != nil {
-			logy.WithError(err).Error("start survey")
-			return
-		}
-		err = command.Run()
-		if err != nil {
-			logy.WithError(err).Error("run command")
-			return
-		}
-		fmt.Printf("\n%sSuccessfully executed '%s' command!", hookCLIIcon, taskType)
+	return answer
+}
+
+func listMaintananceCommands() {
+	answer := showMaintananceCommands()
+
+	switch taskType := answer.Action; taskType {
 	case "Auto Update":
 		updater.ConfirmAndSelfUpdate(repository, version)
 	case "Report a bug":
@@ -163,6 +128,118 @@ func interactiveCliMode() {
 	default:
 		logy.Infof("Command %s is not implemented!", taskType)
 	}
+}
+
+func interactiveCliMode() {
+	fmt.Println(appDesc)
+
+	answer := showPrimaryCommands()
+
+	cd, err := os.Getwd()
+	if err != nil {
+		logy.WithError(err).Error("getwd")
+		return
+	}
+
+	switch taskType := answer.Action; taskType {
+	case "Create Project":
+		command := template.New(
+			template.WithTemplates(cfg.Templates),
+			template.WithVariables(cfg.Variables),
+			template.SetConfigName(surveyFilename),
+			template.WithButlerVersion(version),
+			template.WithGitDir(cd),
+		)
+
+		err := command.StartCommandSurvey()
+		if err != nil {
+			logy.WithError(err).Error("start survey")
+			return
+		}
+
+		err = command.Run()
+		if err != nil {
+			logy.WithError(err).Error("run command")
+			return
+		}
+
+		fmt.Println()
+		command.TaskTracker.PrintSummary(os.Stdout)
+	case "Create Confluence Space":
+		// validate confluence configuration
+		if cfg.ConfluenceAuthMethod != "" {
+			if cfg.ConfluenceAuthMethod == "basic" {
+				if len(cfg.ConfluenceBasicAuth) != 2 {
+					logy.WithField("ENV", "CONFLUENCE_BASIC_AUTH").
+						Fatalf("invalid basic auth credentials")
+				}
+			} else {
+				logy.WithField("ENV", "CONFLUENCE_AUTH_METHOD").
+					Fatalf("only basic auth is currently supported")
+			}
+		} else {
+			logy.Fatalf(
+				"invalid confluence settings. For more information see https://github.com/netzkern/butler/tree/master/docs/confluence.md",
+			)
+		}
+
+		// validate confluence url
+		if cfg.ConfluenceURL != "" {
+			_, err := url.ParseRequestURI(cfg.ConfluenceURL)
+			if err != nil {
+				logy.WithField("ENV", "BUTLER_CONFLUENCE_URL").
+					Fatalf("invalid url")
+			}
+		}
+
+		client := confluence.NewClient(
+			confluence.WithAuth(
+				confluence.BasicAuth(
+					cfg.ConfluenceBasicAuth[0],
+					cfg.ConfluenceBasicAuth[1],
+				),
+			),
+		)
+
+		command := confluence.NewSpace(
+			confluence.WithEndpoint(cfg.ConfluenceURL),
+			confluence.WithClient(client),
+		)
+
+		err := command.StartCommandSurvey()
+		if err != nil {
+			logy.WithError(err).Error("start survey")
+			return
+		}
+
+		_, err = command.Run()
+		if err != nil {
+			logy.WithError(err).Error("run command")
+			return
+		}
+	case "Create Git Hooks":
+		command := githook.New(githook.WithGitDir(cd))
+
+		err := command.StartCommandSurvey()
+		if err != nil {
+			logy.WithError(err).Error("start survey")
+			return
+		}
+
+		err = command.Run()
+		if err != nil {
+			logy.WithError(err).Error("run command")
+			return
+		}
+	case "Maintenance":
+		listMaintananceCommands()
+	case "Exit":
+		os.Exit(0)
+	default:
+		logy.Infof("Command %s is not implemented!", taskType)
+	}
+
+	fmt.Println("Command executed successfully")
 }
 
 func cliMode() {

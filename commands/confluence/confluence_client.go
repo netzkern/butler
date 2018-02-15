@@ -15,7 +15,8 @@ type (
 	}
 	// ClientOption function.
 	ClientOption func(*Client)
-	AuthMethod   interface {
+	// AuthMethod the authentication interface
+	AuthMethod interface {
 		auth(req *http.Request)
 	}
 )
