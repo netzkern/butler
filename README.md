@@ -1,4 +1,6 @@
-![butler](/logo.png)
+<p align="center">
+<img src="/logo.png" alt="butler" style="max-width:100%;">
+</p>
 
 Butler is an automatation tool to scaffold new projects in only a few seconds.
 We provide a powerful interactive cli. When you create a project template you
@@ -74,6 +76,6 @@ Licensed under [MIT](./LICENSE).
 
 ## Credits
 
-Icons made by [Freepikcom](http://www.freepik.com Freepik)
-from [www.flaticon.com](https://www.flaticon.com/ Flaticon)
-is licensed by [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/ Creative Commons BY 3.0)
+Icons made by [Freepikcom](http://www.freepik.com "Freepik")
+from [www.flaticon.com](https://www.flaticon.com/ "Flaticon")
+is licensed by [CC 3.0 BY](http://creativecommons.org/licenses/by/3.0/ "Creative Commons BY 3.0")
