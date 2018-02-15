@@ -58,6 +58,7 @@ type (
 		Key         string
 		Name        string
 		Description string
+		Private     bool
 	}
 )
 
@@ -149,6 +150,12 @@ func (s *Space) getQuestions() []*survey.Question {
 				Message: "Please enter the description of the space.",
 			},
 		},
+		{
+			Name: "Private",
+			Prompt: &survey.Confirm{
+				Message: "Do you want to create a private space?",
+			},
+		},
 	}
 
 	return qs
@@ -161,7 +168,13 @@ func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
 		return nil, err
 	}
 
-	url, err := url.ParseRequestURI(s.endpoint.String() + "/space")
+	endpoint := s.endpoint.String() + "/space"
+
+	if s.CommandData.Private {
+		endpoint += "/_private"
+	}
+
+	url, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, err
 	}
