@@ -4,15 +4,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 
 	logy "github.com/apex/log"
+	"github.com/kelseyhightower/envconfig"
 	yaml "gopkg.in/yaml.v2"
-)
-
-var (
-	butlerConfigURLEnv = "BUTLER_CONFIG_URL"
-	defaultConfigURL   = os.Getenv(butlerConfigURLEnv)
 )
 
 // Template represents the project template with informations about location
@@ -24,8 +19,12 @@ type Template struct {
 
 // Config represents the butler config
 type Config struct {
-	Templates []Template             `json:"templates"`
-	Variables map[string]interface{} `json:"variables"`
+	Templates            []Template             `json:"templates"`
+	Variables            map[string]interface{} `json:"variables"`
+	ConfigURL            string                 `split_words:"true"`
+	ConfluenceURL        string                 `split_words:"true"`
+	ConfluenceAuthMethod string                 `split_words:"true" default:"basic"`
+	ConfluenceBasicAuth  []string               `split_words:"true"`
 }
 
 // downloadConfig download the full file from web
@@ -42,13 +41,17 @@ func downloadConfig(url string) ([]byte, error) {
 
 // ParseConfig returns the yaml parsed config
 func ParseConfig(filename string) *Config {
+	ctx := logy.WithFields(logy.Fields{
+		"config": filename,
+	})
+
 	cfg := &Config{
 		Templates: []Template{},
 		Variables: map[string]interface{}{},
 	}
 	dat, err := ioutil.ReadFile(filename)
 	if err != nil {
-		logy.Warnf("%s could not be found", filename)
+		ctx.Warnf("%s could not be found", filename)
 	}
 
 	cfgExt := &Config{
@@ -58,25 +61,56 @@ func ParseConfig(filename string) *Config {
 
 	err = yaml.Unmarshal(dat, &cfg)
 	if err != nil {
-		logy.Fatalf("could not unmarshal %s", err.Error())
+		ctx.Fatalf("could not unmarshal %s", err.Error())
+	}
+
+	err = envconfig.Process("butler", cfg)
+	if err != nil {
+		ctx.Fatalf("could not inject env variables %s", err.Error())
+	}
+
+	// validate confluence configuration
+	if cfg.ConfluenceAuthMethod != "" {
+		if cfg.ConfluenceAuthMethod == "basic" {
+			if len(cfg.ConfluenceBasicAuth) != 2 {
+				ctx.WithField("ENV", "CONFLUENCE_BASIC_AUTH").
+					Fatalf("invalid basic auth credentials")
+			}
+		} else {
+			ctx.WithField("ENV", "CONFLUENCE_AUTH_METHOD").
+				Fatalf("only basic auth is currently supported")
+		}
+	}
+
+	if cfg.ConfluenceURL != "" {
+		_, err := url.ParseRequestURI(cfg.ConfluenceURL)
+		if err != nil {
+			ctx.WithField("ENV", "BUTLER_CONFLUENCE_URL").
+				Fatalf("invalid url")
+		}
 	}
 
 	// check for external configUrl in env
-	if defaultConfigURL != "" {
-		logy.Infof("loading config from %s=%s", butlerConfigURLEnv, defaultConfigURL)
+	if cfg.ConfigURL != "" {
+		ctx.WithField("externalConfig", cfg.ConfigURL).
+			Infof("loading external config")
 
-		u, err := url.ParseRequestURI(defaultConfigURL)
+		u, err := url.ParseRequestURI(cfg.ConfigURL)
 		if err != nil {
-			logy.Fatalf("invalid url in %+v", butlerConfigURLEnv)
+			ctx.WithField("externalConfig", cfg.ConfigURL).
+				Fatalf("invalid url in BUTLER_CONFIG_URL")
 		}
 
 		dat, err := downloadConfig(u.String())
+
 		if err != nil {
-			logy.Fatalf("%s could not be downloaded from %+v", filename, defaultConfigURL)
+			ctx.WithField("externalConfig", cfg.ConfigURL).
+				Fatalf("%s could not be downloaded from %+v", filename, cfg.ConfigURL)
 		}
 		err = yaml.Unmarshal(dat, &cfgExt)
 		if err != nil {
-			logy.Fatalf("could not unmarshal %s", err.Error())
+			ctx.WithField("externalConfig", cfg.ConfigURL).
+				Fatalf("could not unmarshal %s", err.Error())
 		}
 
 		cfg = mergeConfigs(cfg, cfgExt)
