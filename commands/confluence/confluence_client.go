@@ -58,14 +58,14 @@ func (c *Client) sendRequest(req *http.Request) ([]byte, error) {
 	case http.StatusNoContent, http.StatusResetContent:
 		return nil, nil
 	case http.StatusUnauthorized:
-		return nil, errors.Wrap(err, "Authentication failed.")
+		return nil, errors.New("authentication failed")
 	case http.StatusServiceUnavailable:
-		return nil, errors.Wrapf(err, "Service is not available (%s).", resp.Status)
+		return nil, errors.Errorf("service is not available (%s)", resp.Status)
 	case http.StatusInternalServerError:
-		return nil, errors.Wrapf(err, "Internal server error: %s", resp.Status)
+		return nil, errors.Errorf("Internal server error: %s", resp.Status)
 	}
 
-	return nil, errors.Wrapf(err, "Unknown response status %s", resp.Status)
+	return nil, errors.Wrapf(err, "unknown response status %s", resp.Status)
 }
 
 type basicAuthCallback func() (username, password string)
