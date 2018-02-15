@@ -31,6 +31,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 * <a href="/docs/templateSurveys.md"><code><b>Template Surveys</b></code></a>
 * <a href="/docs/templateSyntax.md"><code><b>Template Syntax</b></code></a>
 * <a href="/docs/gitHooks.md"><code><b>Git Hooks</b></code></a>
+* <a href="/docs/confluence.md"><code><b>Confluence</b></code></a>
 * <a href="/docs/debugging.md"><code><b>Debugging</b></code></a>
 * <a href="#commands"><code><b>Commands</b></code></a>
 
@@ -38,6 +39,7 @@ When you create a project template you can create a [`Survey`](/docs/templateSur
 
 - **Project Templates:** This command will create a new project based on the selected template.
 - **Install Git Hooks:** This command will install all selected hooks.
+- **Create Confluence Space:** This command will create a new public confluence space.
 - **Auto Update:** This command will update Butler to the latest version.
 - **Report a bug:** This command will open a new Github issue.
 - **Version:** This command will return the current version of Butler.
