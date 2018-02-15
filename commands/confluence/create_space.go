@@ -121,8 +121,8 @@ func (s *Space) getQuestions() []*survey.Question {
 			Name: "Name",
 			Validate: survey.ComposeValidators(
 				survey.Required,
-				survey.MinLength(3),
-				survey.MaxLength(20),
+				survey.MinLength(1),
+				survey.MaxLength(30),
 			),
 			Prompt: &survey.Input{
 				Message: "Please enter the name of the space.",
@@ -132,8 +132,8 @@ func (s *Space) getQuestions() []*survey.Question {
 			Name: "Key",
 			Validate: survey.ComposeValidators(
 				survey.Required,
-				survey.MinLength(3),
-				survey.MaxLength(3),
+				survey.MinLength(1),
+				survey.MaxLength(4),
 			),
 			Prompt: &survey.Input{
 				Message: "Please enter the KEY of the space.",
