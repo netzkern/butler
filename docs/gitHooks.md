@@ -1,6 +1,9 @@
 # Butler Git Hooks
 
-You don't need any tooling to create hooks. We have agreed on a simple convention. Your project is shipped with a `git_hooks` folder which has the same directory structure like the git `hooks` folder. In this way we can create symbol links and make them versionable with git.
+You don't need any tooling to create hooks. We have agreed on a simple
+convention. Your project is shipped with a `git_hooks` folder which has the
+same directory structure like the git `hooks` folder. In this way we can
+create symbol links and make them versionable with git.
 
 If you create a new git hook file you have to excute the command again.
 
@@ -11,7 +14,8 @@ If you create a new git hook file you have to excute the command again.
 3. Run Butler and run `Install Git Hooks`
 
 **pre-commit**
-```sh
+
+```shell
 #!/bin/sh
 
 echo "hook executed!"
@@ -22,35 +26,38 @@ _Git Hooks are installed automatically when a new project template is created._
 ## Run hooks in different languages
 
 Node.js
-```sh
+
+```shell
 #!/usr/bin/env node
 
 console.log("hook executed!")
 ```
 
 Python
-```py
+
+```python
 #!/usr/bin/python
 
 print "hook executed!"
 ```
 
 Powershell
-```ps
+
+```powershell
 powershell -ExecutionPolicy RemoteSigned -Command .\.git_hooks\scripts\build.ps1
 ```
 
 ## Details
+
 Hooks are programs you can place in the `$GIT_DIR/git_hooks` directory to
 trigger actions at certain points in git's execution.
- 
-Before Git invokes a hook, it changes its working directory to either
-the root of the working tree in a non-bare repository, or to the
-$GIT_DIR in a bare repository.
- 
-Hooks can get their arguments via the environment, command-line
-arguments, and stdin. See the documentation for each hook below for
-details.
- 
-The currently supported hooks are described [here](https://git-scm.com/docs/githooks).
 
+Before Git invokes a hook, it changes its working directory to either the root
+of the working tree in a non-bare repository, or to the $GIT_DIR in a bare
+repository.
+
+Hooks can get their arguments via the environment, command-line arguments, and
+stdin. See the documentation for each hook below for details.
+
+The currently supported hooks are described
+[here](https://git-scm.com/docs/githooks).
