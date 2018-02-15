@@ -92,25 +92,25 @@ func ParseConfig(filename string) *Config {
 
 	// check for external configUrl in env
 	if cfg.ConfigURL != "" {
-		ctx.WithField("externalConfig", cfg.ConfigURL).
+		ctx.WithField("url", cfg.ConfigURL).
 			Infof("loading external config")
 
 		u, err := url.ParseRequestURI(cfg.ConfigURL)
 		if err != nil {
-			ctx.WithField("externalConfig", cfg.ConfigURL).
+			ctx.WithField("url", cfg.ConfigURL).
 				Fatalf("invalid url in BUTLER_CONFIG_URL")
 		}
 
 		dat, err := downloadConfig(u.String())
 
 		if err != nil {
-			ctx.WithField("externalConfig", cfg.ConfigURL).
+			ctx.WithField("url", cfg.ConfigURL).
 				Fatalf("%s could not be downloaded from %+v", filename, cfg.ConfigURL)
 		}
 		err = yaml.Unmarshal(dat, &cfgExt)
 		if err != nil {
-			ctx.WithField("externalConfig", cfg.ConfigURL).
-				Fatalf("could not unmarshal %s", err.Error())
+			ctx.WithField("url", cfg.ConfigURL).
+				Fatalf("could not unmarshal external config %s", err.Error())
 		}
 
 		cfg = mergeConfigs(cfg, cfgExt)

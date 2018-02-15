@@ -115,7 +115,12 @@ func interactiveCliMode() {
 		fmt.Printf("\n%sSuccessfully executed '%s' command!", hookCLIIcon, taskType)
 	case "Create Confluence Space":
 		client := confluence.NewClient(
-			confluence.WithAuth(confluence.BasicAuth(cfg.ConfluenceBasicAuth[0], cfg.ConfluenceBasicAuth[1])),
+			confluence.WithAuth(
+				confluence.BasicAuth(
+					cfg.ConfluenceBasicAuth[0],
+					cfg.ConfluenceBasicAuth[1],
+				),
+			),
 		)
 		command := confluence.NewSpace(
 			confluence.WithEndpoint(cfg.ConfluenceURL),
