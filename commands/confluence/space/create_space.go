@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
 
@@ -250,19 +249,4 @@ func (s *Space) Run() (*Response, error) {
 // buildSpaceKey create a space key from a string
 func buildSpaceKey(spaceName string) string {
 	return casee.ToCamelCase(spaceName)
-}
-
-// spaceKeyValidator check if string is a valid space key
-// https://confluence.atlassian.com/display/CONF58/Create+a+Space
-func spaceKeyValidator(val interface{}) error {
-	if str, ok := val.(string); ok {
-		reg, err := regexp.Compile("([^a-zA-Z0-9]{1-255})")
-		if err != nil {
-			return err
-		}
-		if reg.MatchString(str) {
-			return errors.New("invalid name")
-		}
-	}
-	return nil
 }
