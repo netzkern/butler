@@ -3,8 +3,6 @@ package confluence
 import (
 	"io/ioutil"
 	"net/http"
-
-	"github.com/pkg/errors"
 )
 
 type (
@@ -18,6 +16,12 @@ type (
 	// AuthMethod the authentication interface
 	AuthMethod interface {
 		auth(req *http.Request)
+	}
+	// RequestResult represent the result of the json request
+	RequestResult struct {
+		StatusCode int
+		Status     string
+		Payload    []byte
 	}
 )
 
@@ -39,34 +43,30 @@ func WithAuth(auth AuthMethod) ClientOption {
 	}
 }
 
-func (c *Client) sendRequest(req *http.Request) ([]byte, error) {
+// sendRequest make a request with an auhentication schema and
+// return the whole request
+func (c *Client) sendRequest(req *http.Request) (*RequestResult, error) {
+	result := &RequestResult{}
 	req.Header.Add("Accept", "application/json, */*")
 	c.authMethod.auth(req)
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	switch resp.StatusCode {
-	case http.StatusOK, http.StatusCreated, http.StatusPartialContent:
-		res, err := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			return nil, err
-		}
-		return res, nil
-	case http.StatusNoContent, http.StatusResetContent:
-		return nil, nil
-	case http.StatusUnauthorized:
-		return nil, errors.New("authentication failed")
-	case http.StatusServiceUnavailable:
-		return nil, errors.Errorf("service is not available (%s)", resp.Status)
-	case http.StatusInternalServerError:
-		return nil, errors.Errorf("internal server error: %s", resp.Status)
+	res, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	result.Payload = res
+	result.StatusCode = resp.StatusCode
+	result.Status = resp.Status
+
+	if err != nil {
+		return result, err
 	}
 
-	return nil, errors.Wrapf(err, "unknown response status %s", resp.Status)
+	return result, nil
 }
 
 type basicAuthCallback func() (username, password string)
