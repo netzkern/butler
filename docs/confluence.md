@@ -35,15 +35,10 @@ You can configure the tree structure of your space with the help of templates. T
 ```yml
 confluence:
   templates:
-    - name: software
+    - name: None
+    - name: Software Project
       pages:
         - name: Introduction
-          children:
-            - name: test1
-            - name: test2
-              children:
-                - name: test3
-                - name: test4
         - name: Product Requirements
         - name: Meeting notes
         - name: Retroperspectives
@@ -51,4 +46,10 @@ confluence:
         - name: Development
         - name: Infrastruktur
         - name: Design
+          children:
+            - name: test1
+            - name: test2
+              children:
+                - name: test3
+                - name: test4
 ```
