@@ -625,7 +625,7 @@ func (t *Templating) Run() (err error) {
 	tempDir, err := ioutil.TempDir(t.gitDir, "butler")
 	if err != nil {
 		err = errors.Wrap(err, "create temp folder failed")
-		return
+		return err
 	}
 
 	// remove template artifacts when a panic or error occur
@@ -654,7 +654,7 @@ func (t *Templating) Run() (err error) {
 
 	if tpl == nil {
 		err = errors.Errorf("template %s could not be found", t.CommandData.Template)
-		return
+		return err
 	}
 
 	/**
@@ -669,7 +669,7 @@ func (t *Templating) Run() (err error) {
 
 	if err != nil {
 		logy.WithError(err).Error("clone")
-		return
+		return err
 	}
 
 	surveyFilePath := path.Join(tempDir, t.configName)
@@ -760,7 +760,7 @@ func (t *Templating) Run() (err error) {
 	if walkDirErr != nil {
 		logy.WithError(walkDirErr).Error("walk dir")
 		err = walkDirErr
-		return
+		return err
 	}
 
 	// rename and remove changed dirs from walk
@@ -769,7 +769,7 @@ func (t *Templating) Run() (err error) {
 		err = os.RemoveAll(oldPath)
 		if err != nil {
 			logy.WithError(err).Error("remove all")
-			return
+			return err
 		}
 	}
 
@@ -778,7 +778,7 @@ func (t *Templating) Run() (err error) {
 		err = os.RemoveAll(path)
 		if err != nil {
 			logy.WithError(err).Error("remove all")
-			return
+			return err
 		}
 	}
 
@@ -788,7 +788,7 @@ func (t *Templating) Run() (err error) {
 
 	if walkErr != nil {
 		err = walkErr
-		return
+		return err
 	}
 
 	go t.stop()
@@ -802,7 +802,7 @@ func (t *Templating) Run() (err error) {
 	* It's blocked until chErr is closed
 	 */
 	var errCount int
-	for _ = range t.chErr {
+	for range t.chErr {
 		errCount++
 	}
 
@@ -816,7 +816,7 @@ func (t *Templating) Run() (err error) {
 		err = t.runSurveyTemplateHooks(tempDir)
 		if err != nil {
 			logy.WithError(err).Error("template hooks failed")
-			return
+			return err
 		}
 	} else {
 		logy.Debug("skip template hooks")
@@ -835,18 +835,18 @@ func (t *Templating) Run() (err error) {
 
 	confirmed, err := t.confirmPackTemplate(confirmMsg)
 	if err != nil {
-		return
+		return err
 	}
 
 	if confirmed {
 		err = t.packTemplate(tempDir, t.CommandData.Path)
 		if err != nil {
 			logy.WithError(err).Error("pack template failed")
-			return
+			return err
 		}
 	} else {
 		err = errManualTermination
-		return
+		return err
 	}
 
 	/**
@@ -865,12 +865,12 @@ func (t *Templating) Run() (err error) {
 	err = commandGitHook.Run()
 	if err != nil {
 		logy.WithError(err).Error("could not create git hooks")
-		return
+		return err
 	}
 
 	t.TaskTracker.UnTrack("Git Hooks")
 
-	return
+	return err
 }
 
 // startN starts n loops.
