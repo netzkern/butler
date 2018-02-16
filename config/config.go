@@ -10,22 +10,35 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// Template represents the project template with informations about location
-// and name
-type Template struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
-}
-
-// Config represents the butler config
-type Config struct {
-	Templates            []Template             `json:"templates"`
-	Variables            map[string]interface{} `json:"variables"`
-	ConfigURL            string                 `split_words:"true"`
-	ConfluenceURL        string                 `split_words:"true"`
-	ConfluenceAuthMethod string                 `split_words:"true"`
-	ConfluenceBasicAuth  []string               `split_words:"true"`
-}
+type (
+	// Template represents the project template with informations about location
+	// and name
+	Template struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	}
+	ConfluencePage struct {
+		Name     string           `json:"name"`
+		Children []ConfluencePage `json:"children"`
+	}
+	ConfluenceTemplate struct {
+		Name  string           `json:"name"`
+		Pages []ConfluencePage `json:"pages"`
+	}
+	Confluence struct {
+		Templates []ConfluenceTemplate `json:"templates"`
+	}
+	// Config represents the butler config
+	Config struct {
+		Templates            []Template             `json:"templates"`
+		Variables            map[string]interface{} `json:"variables"`
+		ConfigURL            string                 `split_words:"true"`
+		ConfluenceURL        string                 `split_words:"true"`
+		ConfluenceAuthMethod string                 `split_words:"true"`
+		ConfluenceBasicAuth  []string               `split_words:"true"`
+		Confluence           Confluence             `json:"confluence"`
+	}
+)
 
 // downloadConfig download the full file from web
 func downloadConfig(url string) ([]byte, error) {

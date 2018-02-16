@@ -11,6 +11,8 @@ import (
 
 	logy "github.com/apex/log"
 	"github.com/netzkern/butler/commands/confluence"
+	"github.com/netzkern/butler/commands/confluence/builder"
+	"github.com/netzkern/butler/commands/confluence/space"
 	"github.com/netzkern/butler/commands/githook"
 	"github.com/netzkern/butler/commands/template"
 	"github.com/netzkern/butler/config"
@@ -199,21 +201,41 @@ func interactiveCliMode() {
 			),
 		)
 
-		command := confluence.NewSpace(
-			confluence.WithEndpoint(cfg.ConfluenceURL),
-			confluence.WithClient(client),
+		createSpaceCmd := space.NewSpace(
+			space.WithEndpoint(cfg.ConfluenceURL),
+			space.WithClient(client),
 		)
 
-		err := command.StartCommandSurvey()
+		err := createSpaceCmd.StartCommandSurvey()
 		if err != nil {
 			logy.WithError(err).Error("start survey")
 			return
 		}
 
-		_, err = command.Run()
+		spaceData, err := createSpaceCmd.Run()
 		if err != nil {
 			logy.WithError(err).Error("run command")
 			return
+		}
+
+		if len(cfg.Confluence.Templates) > 0 {
+			treeBuilderCmd := builder.NewTreeBuilder(
+				builder.WithTemplates(cfg.Confluence.Templates),
+				builder.WithClient(client),
+				builder.WithEndpoint(cfg.ConfluenceURL),
+				builder.WithSpaceKey(spaceData.Key),
+			)
+
+			err = treeBuilderCmd.StartCommandSurvey()
+			if err != nil {
+				logy.WithError(err).Error("start survey")
+				return
+			}
+
+			if err := treeBuilderCmd.Run(); err != nil {
+				logy.WithError(err).Error("run command")
+				return
+			}
 		}
 	case "Create Git Hooks":
 		command := githook.New(githook.WithGitDir(cd))

@@ -7,3 +7,18 @@ templates:
 variables:
   company: netzkern
   email: info@netzkern.de
+
+confluence:
+  templates:
+    - name: None
+    - name: Software Project
+      pages:
+        - name: Introduction
+        - name: Product Requirements
+        - name: Meeting notes
+        - name: Retroperspectives
+        - name: Shared links
+        - name: Development
+        - name: Infrastruktur
+        - name: Design
+

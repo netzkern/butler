@@ -1,15 +1,22 @@
 # Butler config
 
-In the config you can define which project templates are accessible for the user.
-
 ## The butler.yml file
 ```yml
 templates:
-  - name:   The template name (string, required)
-    url:    The git url to the template (string, required)
+  - name:                           The template name (string, required)
+    url:                            The git url to the template (string, required)
 
 variables:
-  test:     The value for custom variable
+  test:                             The value for custom variable
+
+confluence:
+  templates:
+    - name: software                The template name (string, required)
+      pages:
+        - name: Development         The page name (string, required)
+          children:                 The children pages (page)
+            - name: Architecture
+            - name: Getting Started
 ```
 
 #### Custom variables

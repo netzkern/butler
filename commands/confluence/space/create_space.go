@@ -1,4 +1,4 @@
-package confluence
+package space
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/netzkern/butler/commands/confluence"
 	"github.com/pinzolo/casee"
 
 	logy "github.com/apex/log"
@@ -17,22 +18,22 @@ import (
 )
 
 type (
-	// spaceRequest the request payload
-	spaceRequest struct {
-		Key         string    `json:"key"`
-		Name        string    `json:"name"`
-		Description spaceDesc `json:"description"`
+	// request the request payload
+	request struct {
+		Key         string      `json:"key"`
+		Name        string      `json:"name"`
+		Description requestDesc `json:"description"`
 	}
-	spaceDesc struct {
-		Plain spaceDescPlain `json:"plain"`
+	requestDesc struct {
+		Plain requestContent `json:"plain"`
 	}
-	spaceDescPlain struct {
+	requestContent struct {
 		Value          string `json:"value"`
 		Representation string `json:"representation"`
 	}
-	// SpaceResponse the response payload
-	SpaceResponse struct {
-		ID          string `json:"id"`
+	// Response the response payload
+	Response struct {
+		ID          int    `json:"id"`
 		Key         string `json:"key"`
 		Name        string `json:"name"`
 		Description struct {
@@ -49,31 +50,32 @@ type (
 			Self       string `json:"self"`
 		} `json:"_links"`
 	}
-	// SpaceOption function.
-	SpaceOption func(*Space)
+	// Option function.
+	Option func(*Space)
 	// Space command to create git hooks
 	Space struct {
-		client      *Client
+		client      *confluence.Client
 		endpoint    *url.URL
-		CommandData *CommandData
+		commandData *CommandData
 	}
 	// CommandData contains all command related data
 	CommandData struct {
 		Key         string
 		Name        string
 		Description string
-		Private     bool
+		Public      bool
 	}
 )
 
 var (
-	errBadRequest   = errors.New("the space already has a value with the given key, or no property value was provided, or the value is too long")
+	errBadRequest   = errors.New("there is already a space with the given key, or no property value was provided, or the value is too long")
 	errForbidden    = errors.New("the user does not have permission to edit the space with the given key")
 	errUnauthorized = errors.New("the user does not have permission to create the space")
+	errNotFound     = errors.New("the user does not have permission to view the requested content")
 )
 
 // NewSpace with the given options.
-func NewSpace(options ...SpaceOption) *Space {
+func NewSpace(options ...Option) *Space {
 	v := &Space{}
 
 	for _, o := range options {
@@ -84,14 +86,14 @@ func NewSpace(options ...SpaceOption) *Space {
 }
 
 // WithClient option.
-func WithClient(client *Client) SpaceOption {
+func WithClient(client *confluence.Client) Option {
 	return func(c *Space) {
 		c.client = client
 	}
 }
 
 // WithEndpoint option.
-func WithEndpoint(location string) SpaceOption {
+func WithEndpoint(location string) Option {
 	return func(c *Space) {
 		u, err := url.ParseRequestURI(location)
 		if err != nil {
@@ -103,9 +105,9 @@ func WithEndpoint(location string) SpaceOption {
 }
 
 // WithCommandData option.
-func WithCommandData(cd *CommandData) SpaceOption {
+func WithCommandData(cd *CommandData) Option {
 	return func(g *Space) {
-		g.CommandData = cd
+		g.commandData = cd
 	}
 }
 
@@ -120,7 +122,7 @@ func (s *Space) StartCommandSurvey() error {
 	}
 
 	cmd.Key = buildSpaceKey(cmd.Name)
-	s.CommandData = cmd
+	s.commandData = cmd
 
 	return nil
 }
@@ -151,9 +153,9 @@ func (s *Space) getQuestions() []*survey.Question {
 			},
 		},
 		{
-			Name: "Private",
+			Name: "Public",
 			Prompt: &survey.Confirm{
-				Message: "Do you want to create a private space?",
+				Message: "Do you want to create a public space?",
 			},
 		},
 	}
@@ -162,16 +164,18 @@ func (s *Space) getQuestions() []*survey.Question {
 }
 
 // https://docs.atlassian.com/atlassian-confluence/REST/6.6.0/#space-createSpace
-func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
+func (s *Space) create(reqBody *request) (*Response, error) {
 	jsonbody, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, err
 	}
 
-	endpoint := s.endpoint.String() + "/space"
+	endpoint := s.endpoint.String()
 
-	if s.CommandData.Private {
-		endpoint += "/_private"
+	if s.commandData.Public {
+		endpoint += "/space"
+	} else {
+		endpoint += "/space/_private"
 	}
 
 	url, err := url.ParseRequestURI(endpoint)
@@ -182,8 +186,6 @@ func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	logy.Debugf("create space request to %s", url.String())
-
 	req, err := http.NewRequest("POST", url.String(), strings.NewReader(string(jsonbody)))
 	if err != nil {
 		return nil, errors.Wrap(err, "request could not be created")
@@ -193,7 +195,9 @@ func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
 
 	req = req.WithContext(ctx)
 
-	resp, err := s.client.sendRequest(req)
+	logy.Debugf("new create space request to %s", url.String())
+
+	resp, err := s.client.SendRequest(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "request could not be executed")
 	}
@@ -204,6 +208,8 @@ func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
 		return nil, errBadRequest
+	case http.StatusNotFound:
+		return nil, errNotFound
 	case http.StatusForbidden:
 		return nil, errForbidden
 	case http.StatusUnauthorized:
@@ -214,7 +220,7 @@ func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
 		return nil, errors.Errorf("internal server error: %s", resp.Status)
 	}
 
-	var space SpaceResponse
+	var space Response
 	err = json.Unmarshal(resp.Payload, &space)
 	if err != nil {
 		return nil, err
@@ -224,22 +230,26 @@ func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
 }
 
 // Run the command
-func (s *Space) Run() (*SpaceResponse, error) {
-	return s.create(&spaceRequest{
-		Key:  s.CommandData.Key,
-		Name: s.CommandData.Name,
-		Description: spaceDesc{
-			Plain: spaceDescPlain{
+func (s *Space) Run() (*Response, error) {
+	req := &request{
+		Key:  s.commandData.Key,
+		Name: s.commandData.Name,
+		Description: requestDesc{
+			Plain: requestContent{
 				Representation: "plain",
-				Value:          s.CommandData.Description,
+				Value:          s.commandData.Description,
 			},
 		},
-	})
+	}
+
+	logy.Debugf("create space request payload: %+v\n", req)
+
+	return s.create(req)
 }
 
 // buildSpaceKey create a space key from a string
 func buildSpaceKey(spaceName string) string {
-	return casee.ToChainCase(spaceName)
+	return casee.ToCamelCase(spaceName)
 }
 
 // spaceKeyValidator check if string is a valid space key

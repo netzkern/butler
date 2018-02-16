@@ -6,7 +6,7 @@ Butler is an automatation tool to scaffold new projects in only a few seconds.
 We provide a powerful interactive cli. When you create a project template you
 can create a [`Survey`](/docs/templateSurveys.md). Surveys are used to collect
 informations from the users to generate individual templates. Beside
-templating we also plan to integrate common tasks of popular Project Managents
+templating we also plan to integrate common tasks of popular Project Management
 Tools like Jira, Confluence in Butler.
 
 > Bootstraping projects should be fun!
@@ -44,7 +44,7 @@ or `.tmpl` files
 
 - **Create Project:** This command will create a new project based on the selected template.
 - **Create Git Hooks:** This command will install all selected hooks.
-- **Create Confluence Space:** This command will create a public or private confluence space.
+- **Create Confluence Space:** This command will create a public or private confluence space based on the selected template.
 - **Maintanance:**
   - **Auto Update:** This command will update Butler to the latest version.
   - **Report a bug:** This command will open a new Github issue.
