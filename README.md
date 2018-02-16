@@ -15,8 +15,7 @@ Tools like Jira, Confluence in Butler.
 - Template Surveys
 - Conditional files and folders
 - After hooks for post-processing
-- Auto Update
-- Distributed configs
+- :sparkles: **Maintanance:** Auto Update, Distributed configs
 - :star2: **Confluence:** Create spaces with preconfigured page tree
 
 ## Principles
