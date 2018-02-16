@@ -124,7 +124,7 @@ func (s *Space) getQuestions() []*survey.Question {
 			Validate: survey.ComposeValidators(
 				survey.Required,
 				survey.MinLength(1),
-				survey.MaxLength(30),
+				survey.MaxLength(255),
 			),
 			Prompt: &survey.Input{
 				Message: "Please enter the name of the space.",
@@ -134,8 +134,7 @@ func (s *Space) getQuestions() []*survey.Question {
 			Name: "Key",
 			Validate: survey.ComposeValidators(
 				survey.Required,
-				survey.MinLength(1),
-				survey.MaxLength(4),
+				spaceKeyValidator,
 			),
 			Prompt: &survey.Input{
 				Message: "Please enter the KEY of the space.",
@@ -145,7 +144,8 @@ func (s *Space) getQuestions() []*survey.Question {
 			Name: "Description",
 			Validate: survey.ComposeValidators(
 				survey.Required,
-				spaceNameValidator,
+				survey.MinLength(1),
+				survey.MaxLength(255),
 			),
 			Prompt: &survey.Input{
 				Message: "Please enter the description of the space.",
@@ -219,9 +219,9 @@ func (s *Space) Run() (*SpaceResponse, error) {
 	})
 }
 
-// spaceNameValidator check if string is a valid space key
+// spaceKeyValidator check if string is a valid space key
 // https://confluence.atlassian.com/display/CONF58/Create+a+Space
-func spaceNameValidator(val interface{}) error {
+func spaceKeyValidator(val interface{}) error {
 	if str, ok := val.(string); ok {
 		reg, err := regexp.Compile("([^a-zA-Z0-9]{1-255})")
 		if err != nil {
