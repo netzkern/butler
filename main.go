@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	debug           = false
-	trace           = false
 	appName         = "Butler"
 	appDesc         = "Welcome to Butler, your personal assistent to scaffold new projects.\n"
 	githubIssueLink = "https://github.com/netzkern/butler/issues/new"
@@ -237,6 +235,7 @@ func interactiveCliMode() {
 		os.Exit(0)
 	default:
 		logy.Infof("Command %s is not implemented!", taskType)
+		return
 	}
 
 	fmt.Println("Command executed successfully")
