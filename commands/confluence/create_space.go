@@ -66,6 +66,12 @@ type (
 	}
 )
 
+var (
+	errBadRequest   = errors.New("the space already has a value with the given key, or no property value was provided, or the value is too long")
+	errForbidden    = errors.New("the user does not have permission to edit the space with the given key")
+	errUnauthorized = errors.New("the user does not have permission to create the space")
+)
+
 // NewSpace with the given options.
 func NewSpace(options ...SpaceOption) *Space {
 	v := &Space{}
@@ -170,7 +176,7 @@ func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
 
 	url, err := url.ParseRequestURI(endpoint)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "endpoint could not be parsed")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -179,23 +185,42 @@ func (s *Space) create(reqBody *spaceRequest) (*SpaceResponse, error) {
 	logy.Debugf("create space request to %s", url.String())
 
 	req, err := http.NewRequest("POST", url.String(), strings.NewReader(string(jsonbody)))
+	if err != nil {
+		return nil, errors.Wrap(err, "request could not be created")
+	}
 
 	req.Header.Add("Content-Type", "application/json")
 
 	req = req.WithContext(ctx)
 
-	res, err := s.client.sendRequest(req)
+	resp, err := s.client.sendRequest(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "request could not be executed")
+	}
+
+	logy.Debugf("create space request returned (%s)", resp.Status)
+
+	// provide detail error messages
+	switch resp.StatusCode {
+	case http.StatusBadRequest:
+		return nil, errBadRequest
+	case http.StatusForbidden:
+		return nil, errForbidden
+	case http.StatusUnauthorized:
+		return nil, errUnauthorized
+	case http.StatusServiceUnavailable:
+		return nil, errors.Errorf("service is not available (%s)", resp.Status)
+	case http.StatusInternalServerError:
+		return nil, errors.Errorf("internal server error: %s", resp.Status)
+	}
+
+	var space SpaceResponse
+	err = json.Unmarshal(resp.Payload, &space)
 	if err != nil {
 		return nil, err
 	}
 
-	var resp SpaceResponse
-	err = json.Unmarshal(res, &resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &resp, nil
+	return &space, nil
 }
 
 // Run the command
