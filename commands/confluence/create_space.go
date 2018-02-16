@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pinzolo/casee"
+
 	logy "github.com/apex/log"
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -111,6 +113,7 @@ func (s *Space) StartCommandSurvey() error {
 		return err
 	}
 
+	s.CommandData.Key = buildSpaceKey(cmd.Name)
 	s.CommandData = cmd
 
 	return nil
@@ -128,16 +131,6 @@ func (s *Space) getQuestions() []*survey.Question {
 			),
 			Prompt: &survey.Input{
 				Message: "Please enter the name of the space.",
-			},
-		},
-		{
-			Name: "Key",
-			Validate: survey.ComposeValidators(
-				survey.Required,
-				spaceKeyValidator,
-			),
-			Prompt: &survey.Input{
-				Message: "Please enter the KEY of the space.",
 			},
 		},
 		{
@@ -217,6 +210,10 @@ func (s *Space) Run() (*SpaceResponse, error) {
 			},
 		},
 	})
+}
+
+func buildSpaceKey(spaceName string) string {
+	return casee.ToChainCase(spaceName)
 }
 
 // spaceKeyValidator check if string is a valid space key
