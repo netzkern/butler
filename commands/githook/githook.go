@@ -111,7 +111,7 @@ func (g *Githook) getQuestions() []*survey.Question {
 			Name:     "Path",
 			Validate: survey.Required,
 			Prompt: &survey.Input{
-				Message: "What is the destination?",
+				Message: "What's the destination?",
 				Default: ".",
 			},
 		},
@@ -119,7 +119,7 @@ func (g *Githook) getQuestions() []*survey.Question {
 			Name:     "Hooks",
 			Validate: survey.Required,
 			Prompt: &survey.MultiSelect{
-				Message: "Which hooks should be installed?",
+				Message: "Please select your hooks",
 				Options: Hooks,
 			},
 		},

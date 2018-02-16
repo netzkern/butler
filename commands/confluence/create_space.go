@@ -136,7 +136,7 @@ func (s *Space) getQuestions() []*survey.Question {
 				survey.MaxLength(255),
 			),
 			Prompt: &survey.Input{
-				Message: "Please enter the name of the space.",
+				Message: "What's the name of the space?",
 			},
 		},
 		{
@@ -147,7 +147,7 @@ func (s *Space) getQuestions() []*survey.Question {
 				survey.MaxLength(255),
 			),
 			Prompt: &survey.Input{
-				Message: "Please enter the description of the space.",
+				Message: "What's the description of the space?",
 			},
 		},
 		{
