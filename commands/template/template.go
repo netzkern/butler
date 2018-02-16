@@ -269,7 +269,7 @@ func (t *Templating) getQuestions() []*survey.Question {
 		{
 			Name: "Name",
 			Prompt: &survey.Input{
-				Message: "What is the project name?",
+				Message: "What's the project name?",
 				Help:    "Allowed character [a-zA-Z0-9_-]{3,30}",
 			},
 			Validate: survey.ComposeValidators(
@@ -282,14 +282,14 @@ func (t *Templating) getQuestions() []*survey.Question {
 		{
 			Name: "Description",
 			Prompt: &survey.Input{
-				Message: "What is the project description?",
+				Message: "What's the project description?",
 			},
 		},
 		{
 			Name:     "Path",
 			Validate: survey.Required,
 			Prompt: &survey.Input{
-				Message: "What is the destination?",
+				Message: "What's the destination?",
 				Default: "src",
 				Help:    "The place of your new project",
 			},
