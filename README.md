@@ -17,6 +17,7 @@ Tools like Jira, Confluence in Butler.
 - After hooks for post-processing
 - Auto Update
 - Distributed configs
+- :star2: **Confluence:** Create spaces with preconfigured page tree
 
 ## Principles
 - Project Templates are simple git repositories
