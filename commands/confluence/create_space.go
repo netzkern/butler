@@ -113,7 +113,7 @@ func (s *Space) StartCommandSurvey() error {
 		return err
 	}
 
-	s.CommandData.Key = buildSpaceKey(cmd.Name)
+	cmd.Key = buildSpaceKey(cmd.Name)
 	s.CommandData = cmd
 
 	return nil
@@ -212,6 +212,7 @@ func (s *Space) Run() (*SpaceResponse, error) {
 	})
 }
 
+// buildSpaceKey create a space key from a string
 func buildSpaceKey(spaceName string) string {
 	return casee.ToChainCase(spaceName)
 }
