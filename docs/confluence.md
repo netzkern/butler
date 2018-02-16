@@ -19,13 +19,13 @@ When a space is created, the creator automatically has the `Admin` permission fo
 - Create Confluence Space
 
   This command will create a new space. You can specify the space name and description.
-  The Space Key is generated from the Space name and converted to `camelCase` e.g `my project` to Key `myProject`
+  The Space Key is generated from the Space name and converted to `camelCase` e.g `my project` to Key `myProject`. In the final stage you can select your template to generate the space page-tree.
 
   **Questions:**
   - What's the name of the space?
   - What's the description of the space?
   - Do you want to create a public space?
-  - Please select a template
+  - Please select a template (If you want to skip this select `None`)
 
 
 
