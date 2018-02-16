@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
 	logy "github.com/apex/log"
+	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -143,8 +145,7 @@ func (s *Space) getQuestions() []*survey.Question {
 			Name: "Description",
 			Validate: survey.ComposeValidators(
 				survey.Required,
-				survey.MinLength(3),
-				survey.MaxLength(300),
+				spaceNameValidator,
 			),
 			Prompt: &survey.Input{
 				Message: "Please enter the description of the space.",
@@ -216,4 +217,19 @@ func (s *Space) Run() (*SpaceResponse, error) {
 			},
 		},
 	})
+}
+
+// spaceNameValidator check if string is a valid space key
+// https://confluence.atlassian.com/display/CONF58/Create+a+Space
+func spaceNameValidator(val interface{}) error {
+	if str, ok := val.(string); ok {
+		reg, err := regexp.Compile("([^a-zA-Z0-9]{1-255})")
+		if err != nil {
+			return err
+		}
+		if reg.MatchString(str) {
+			return errors.New("invalid name")
+		}
+	}
+	return nil
 }
