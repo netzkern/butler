@@ -11,14 +11,14 @@ type (
 		authMethod AuthMethod
 		client     *http.Client
 	}
-	// ClientOption function.
-	ClientOption func(*Client)
+	// Option function.
+	Option func(*Client)
 	// AuthMethod the authentication interface
 	AuthMethod interface {
 		auth(req *http.Request)
 	}
-	// RequestResult represent the result of the json request
-	RequestResult struct {
+	// Response represent the result of the json request
+	Response struct {
 		StatusCode int
 		Status     string
 		Payload    []byte
@@ -26,7 +26,7 @@ type (
 )
 
 // NewClient with the given options.
-func NewClient(options ...ClientOption) *Client {
+func NewClient(options ...Option) *Client {
 	v := &Client{client: &http.Client{}}
 
 	for _, o := range options {
@@ -37,16 +37,16 @@ func NewClient(options ...ClientOption) *Client {
 }
 
 // WithAuth option.
-func WithAuth(auth AuthMethod) ClientOption {
+func WithAuth(auth AuthMethod) Option {
 	return func(c *Client) {
 		c.authMethod = auth
 	}
 }
 
-// sendRequest make a request with an auhentication schema and
+// SendRequest make a request with an auhentication schema and
 // return the whole request
-func (c *Client) sendRequest(req *http.Request) (*RequestResult, error) {
-	result := &RequestResult{}
+func (c *Client) SendRequest(req *http.Request) (*Response, error) {
+	result := &Response{}
 	req.Header.Add("Accept", "application/json, */*")
 	c.authMethod.auth(req)
 
