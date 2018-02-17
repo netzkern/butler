@@ -218,6 +218,7 @@ func interactiveCliMode() {
 			return
 		}
 
+		// skip tree builder when no template exist
 		if len(cfg.Confluence.Templates) > 0 {
 			treeBuilderCmd := builder.NewTreeBuilder(
 				builder.WithTemplates(cfg.Confluence.Templates),

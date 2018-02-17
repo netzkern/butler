@@ -94,8 +94,7 @@ func WithCommandData(cd *CommandData) Option {
 	}
 }
 
-// https://docs.atlassian.com/atlassian-confluence/REST/6.6.0/#space-createSpace
-// https://developer.atlassian.com/cloud/confluence/rest/#api-content-get
+// https://developer.atlassian.com/cloud/confluence/rest/#api-content-post
 func (s *Page) create(reqBody *request) (*Response, error) {
 	jsonbody, err := json.Marshal(reqBody)
 	if err != nil {
