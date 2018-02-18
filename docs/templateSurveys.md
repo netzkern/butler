@@ -35,6 +35,7 @@ variables:
 
 #### After hooks
 Hooks are executed after the project is created. The hook pipeline is aborted when any command return an error.
+The hook process will inherit all environment variables from the parent process.
 
 
 #### Custom variables
