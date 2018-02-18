@@ -38,7 +38,7 @@ or `.tmpl` files
 * [**Git Hooks**](/docs/gitHooks.md)
 * [**Confluence**](/docs/confluence.md)
 * [**Debugging**](/docs/debugging.md)
-* [**Commands**](/docs/commands.md)
+* [**Commands**](#commands)
 
 ## Commands
 
