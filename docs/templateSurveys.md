@@ -37,6 +37,13 @@ variables:
 Hooks are executed after the project is created. The hook pipeline is aborted when any command return an error.
 The hook process will inherit all environment variables from the parent process.
 
+You have access to the survey results inside your hooks. The results are exposed with environment variables.
+
+```sh
+BUTLER_<NAME>=a # for single values
+BUTLER_<NAME>=a,b # for multiple values like "multiselect" question
+```
+
 
 #### Custom variables
 You can define custom variables. In case of a conflict the template variables have priority over local variables.
