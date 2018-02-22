@@ -6,7 +6,7 @@ Butler is an automatation tool to scaffold new projects in only a few seconds.
 We provide a powerful interactive cli. When you create a project template you
 can create a [`Survey`](/docs/templateSurveys.md). Surveys are used to collect
 informations from the users to generate individual templates. Beside
-templating we also plan to integrate common tasks of popular Project Management
+templating we also plan to integrate common commands for popular Project Management
 Tools like Jira, Confluence in Butler.
 
 > Bootstraping projects should be fun!
