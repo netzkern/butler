@@ -12,9 +12,9 @@ Tools like Jira, Confluence in Butler.
 > Bootstraping projects should be fun!
 
 ## Features
-- Template Surveys
-- Conditional files and folders
-- After hooks for post-processing
+- ✔︎ Template Surveys
+- ✔︎ Conditional files and folders
+- ✔︎ After hooks for post-processing
 - :sparkles: **Maintanance:** Auto Update, Distributed configs
 - :star2: **Confluence:** Create spaces with preconfigured page tree
 
