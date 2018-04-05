@@ -38,7 +38,7 @@ type commandSelection struct {
 
 var (
 	cfg             *config.Config
-	version         = "0.0.34"
+	version         = "0.0.35"
 	primaryCommands = []string{
 		"Create Project",
 		"Create Confluence Space",
