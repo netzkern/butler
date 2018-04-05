@@ -43,6 +43,8 @@ butler{ .Vars.company }
 - `butler{ toPascalCase "foo-bar" }` Transform a string to pascal-case.
 - `butler{ join $array "," }` Joins all elements of an array into a string and returns this string.
 - `butler{ uuid }` Returns a random UUID Version 4 string.
+- `butler{ cwd }` Returns the absolute path of the working directory.
+- `butler{ env "name" }` Returns the value of the environment variable.
 
 _All functions are written in camelCase_
 

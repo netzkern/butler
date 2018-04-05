@@ -87,7 +87,7 @@ type Option func(*Templating)
 
 // New with the given options.
 func New(options ...Option) *Templating {
-	v := &Templating{
+	t := &Templating{
 		excludedDirs: toMap(ExcludedDirs),
 		excludedExts: toMap(BinaryFileExt),
 		// the buffer size is equivalent to the worker size this reduce the chance of wasted (blocking) resources.
@@ -98,19 +98,21 @@ func New(options ...Option) *Templating {
 		TaskTracker:  NewTaskTracker(),
 	}
 
-	v.templateFuncMap = template.FuncMap{
+	for _, o := range options {
+		o(t)
+	}
+
+	t.templateFuncMap = template.FuncMap{
 		"toCamelCase":  casee.ToCamelCase,
 		"toPascalCase": casee.ToPascalCase,
 		"toSnakeCase":  casee.ToSnakeCase,
 		"join":         strings.Join,
 		"uuid":         uuid.NewV4,
+		"cwd":          func() string { return t.gitDir },
+		"env":          func(name string) string { return os.Getenv(name) },
 	}
 
-	for _, o := range options {
-		o(v)
-	}
-
-	return v
+	return t
 }
 
 // WithGitDir option.
@@ -196,14 +198,9 @@ func (t *Templating) packTemplate(tempDir, dest string) error {
 		return errors.Wrap(err, "dest abs failed")
 	}
 
-	gitDirAbs, err := filepath.Abs(t.gitDir)
-	if err != nil {
-		return errors.Wrap(err, "gitDir abs failed")
-	}
-
 	// move files from temp to cd
-	if destAbs == gitDirAbs {
-		err := utils.MoveDir(tempDir, gitDirAbs)
+	if destAbs == t.gitDir {
+		err := utils.MoveDir(tempDir, t.gitDir)
 		if err != nil {
 			return errors.Wrap(err, "move failed")
 		}
