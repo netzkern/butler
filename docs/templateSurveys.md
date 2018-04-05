@@ -4,10 +4,10 @@ Your are able to create an interactive survey before your template is proceed. T
 
 ## How to create a survey?
 
-1. Create a config file `butler-survey.yml` in the root directory of your template repository.
-2. Create questions based on the [format](#configuration) below.
-3. Build your template with the [easy to use](/docs/templateSyntax.md#get-survey-results) template syntax.
-4. Run butler and create a new project.
+1.  Create a config file `butler-survey.yml` in the root directory of your template repository.
+2.  Create questions based on the [format](#configuration) below.
+3.  Build your template with the [easy to use](/docs/templateSyntax.md#get-survey-results) template syntax.
+4.  Run butler and create a new project.
 
 ## The butler-survey.yml file
 
@@ -23,7 +23,7 @@ questions:
     default:  The default value ([]string for select otherwise string)
     help:     The help message (string, optional)
     required: Whether or not this question is required (boolean)
-    
+
 afterHooks:
   - cmd:      The command to execute (string, required)
     args:     The arguments for the cmd ([]string, optional)
@@ -34,6 +34,7 @@ variables:
 ```
 
 #### After hooks
+
 Hooks are executed after the project is created. The hook pipeline is aborted when any command return an error.
 The hook process will inherit all environment variables from the parent process.
 
@@ -44,6 +45,6 @@ BUTLER_<NAME>=a # for single values
 BUTLER_<NAME>=a,b # for multiple values like "multiselect" question
 ```
 
-
 #### Custom variables
+
 You can define custom variables. In case of a conflict the template variables have priority over local variables.

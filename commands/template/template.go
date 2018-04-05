@@ -103,13 +103,25 @@ func New(options ...Option) *Templating {
 	}
 
 	t.templateFuncMap = template.FuncMap{
+		// string helper funcs
 		"toCamelCase":  casee.ToCamelCase,
 		"toPascalCase": casee.ToPascalCase,
 		"toSnakeCase":  casee.ToSnakeCase,
 		"join":         strings.Join,
-		"uuid":         uuid.NewV4,
-		"cwd":          func() string { return t.gitDir },
-		"env":          func(name string) string { return os.Getenv(name) },
+		"replace":      strings.Replace,
+		"contains":     strings.Contains,
+		"index":        strings.Index,
+		"repeat":       strings.Repeat,
+		"split":        strings.Split,
+		// regexp
+		"regex": func(str string) *regexp.Regexp {
+			return regexp.MustCompile(str)
+		},
+		// generators
+		"uuid": uuid.NewV4,
+		//environment
+		"cwd": func() string { return t.gitDir },
+		"env": func(name string) string { return os.Getenv(name) },
 	}
 
 	return t
