@@ -58,7 +58,7 @@ butler{ .Vars.company }
 
 ### Regex
 
-* `butler{ regex "[0-9]+" .FindString "Im 26 years old" }` Returns `26`
+* `butler{ (regex "[0-9]+").FindString "I'm 26 years old" }` Returns `26`
 * For more methods look in the official [`Regex documentation`](https://golang.org/pkg/regexp/.)
 
 ### Generators
