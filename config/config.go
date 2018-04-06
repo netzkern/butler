@@ -42,6 +42,8 @@ type (
 	}
 )
 
+const userConfigName = ".butler.yml"
+
 // downloadConfig download the full file from web
 func downloadConfig(path string) ([]byte, error) {
 	resp, err := http.Get(path)
@@ -93,7 +95,7 @@ func ParseConfig(filename string) *Config {
 	var homeCfg *Config
 
 	if usr != nil {
-		homePath := path.Join(usr.HomeDir, "." + "butler.yml")
+		homePath := path.Join(usr.HomeDir, userConfigName)
 
 		if _, err = os.Stat(homePath); !os.IsNotExist(err) {
 			homeCtx := logy.WithFields(logy.Fields{
