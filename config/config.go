@@ -8,6 +8,7 @@ import (
 
 	logy "github.com/apex/log"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/netzkern/butler/utils"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -131,14 +132,14 @@ func ParseConfig(filename string) *Config {
 
 		var dat []byte
 
-		if dat, err = downloadConfig(cfg.ConfigURL); err != nil {
-			ctx.WithField("url", cfg.ConfigURL).
-				Errorf("could not handle BUTLER_CONFIG_URL as external url")
-
+		if utils.Exists(cfg.ConfigURL) {
 			if dat, err = ioutil.ReadFile(cfg.ConfigURL); err != nil {
 				ctx.WithField("url", cfg.ConfigURL).
-					Fatalf("could not handle BUTLER_CONFIG_URL as file system uri")
+					Fatalf("could not read config from file system")
 			}
+		} else if dat, err = downloadConfig(cfg.ConfigURL); err != nil {
+			ctx.WithField("url", cfg.ConfigURL).
+				Errorf("could not read config from external url")
 		}
 		
 		err = yaml.Unmarshal(dat, &cfgExt)
