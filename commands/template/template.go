@@ -176,10 +176,10 @@ func WithTemplateSurveyResults(sr map[string]interface{}) Option {
 	}
 }
 
-// unpackTemplate clone a repo to the dst
-func (t *Templating) unpackTemplate(repoURL string, dest string) error {
+// unpackGitRepository clone a repo to the dst
+func (t *Templating) unpackGitRepository(templatePath string, dest string) error {
 	_, err := git.PlainClone(dest, false, &git.CloneOptions{
-		URL: repoURL,
+		URL: templatePath,
 	})
 
 	if err != nil {
@@ -189,7 +189,23 @@ func (t *Templating) unpackTemplate(repoURL string, dest string) error {
 	// remove git files
 	err = os.RemoveAll(filepath.Join(dest, ".git"))
 	if err != nil {
-		return errors.Wrap(err, "remove all failed")
+		return errors.Wrap(err, "git files from remote repository could not be removed")
+	}
+
+	return err
+}
+
+// unpackLocalGitRepository copy a local repository to the dst
+func (t *Templating) unpackLocalGitRepository(templatePath string, dest string) error {
+	err := utils.MoveDir(templatePath, dest)
+	if err != nil {
+		return errors.Wrap(err, "local repository could not be copied")
+	}
+
+	// remove git files
+	err = os.RemoveAll(filepath.Join(dest, ".git"))
+	if err != nil {
+		return errors.Wrap(err, "git files from local repository could not be removed")
 	}
 
 	return err
@@ -201,7 +217,7 @@ func (t *Templating) packTemplate(tempDir, dest string) error {
 	if utils.Exists(butlerSurveyFile) {
 		err := os.Remove(butlerSurveyFile)
 		if err != nil {
-			return errors.Wrap(err, "remove butler failes failed")
+			return errors.Wrap(err, "butler files could not be removed")
 		}
 	}
 
@@ -672,7 +688,13 @@ func (t *Templating) Run() (err error) {
 	t.TaskTracker.Track("Clone")
 	cloneSpinner := defaultSpinner("Cloning repository...")
 	cloneSpinner.Start()
-	err = t.unpackTemplate(tpl.URL, tempDir)
+
+	if utils.Exists(tpl.URL) {
+		err = t.unpackLocalGitRepository(tpl.URL, tempDir)
+	} else {
+		err = t.unpackGitRepository(tpl.URL, tempDir)
+	}
+
 	t.TaskTracker.UnTrack("Clone")
 	cloneSpinner.Stop()
 

@@ -3,7 +3,6 @@ package config
 import (
 	"io/ioutil"
 	"net/http"
-	"net/url"
 
 	logy "github.com/apex/log"
 	"github.com/kelseyhightower/envconfig"
@@ -41,14 +40,12 @@ type (
 )
 
 // downloadConfig download the full file from web
-func downloadConfig(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+func downloadConfig(path string) ([]byte, error) {
+	resp, err := http.Get(path)
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
-
 	return ioutil.ReadAll(resp.Body)
 }
 
@@ -86,18 +83,14 @@ func ParseConfig(filename string) *Config {
 	if cfg.ConfigURL != "" {
 		ctx.WithField("url", cfg.ConfigURL).
 			Debugf("loading external config")
-
-		u, err := url.ParseRequestURI(cfg.ConfigURL)
-		if err != nil {
+		var dat []byte
+		if dat, err = downloadConfig(cfg.ConfigURL); err != nil {
 			ctx.WithField("url", cfg.ConfigURL).
-				Fatalf("invalid url in BUTLER_CONFIG_URL")
-		}
-
-		dat, err := downloadConfig(u.String())
-
-		if err != nil {
-			ctx.WithField("url", cfg.ConfigURL).
-				Fatalf("%s could not be downloaded from %+v", filename, cfg.ConfigURL)
+				Errorf("could not handle BUTLER_CONFIG_URL as external url")
+			if dat, err = ioutil.ReadFile(cfg.ConfigURL); err != nil {
+				ctx.WithField("url", cfg.ConfigURL).
+					Fatalf("could not handle BUTLER_CONFIG_URL as file system uri")
+			}
 		}
 		err = yaml.Unmarshal(dat, &cfgExt)
 		if err != nil {

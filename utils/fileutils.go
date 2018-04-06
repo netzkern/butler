@@ -110,7 +110,7 @@ func CopyDir(src string, dst string) (err error) {
 	return err
 }
 
-// MoveDir moves all files from src to dst
+// MoveDir copy and moves all files from src to dst
 func MoveDir(src string, dst string) (err error) {
 	entries, err := ioutil.ReadDir(src)
 	if err != nil {
@@ -145,9 +145,7 @@ func MoveDir(src string, dst string) (err error) {
 // Exists return true when file or dir exists
 func Exists(name string) bool {
 	if _, err := os.Stat(name); err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
+		return false
 	}
 	return true
 }
