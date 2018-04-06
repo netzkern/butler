@@ -10,7 +10,6 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	logy "github.com/apex/log"
-	yaml "gopkg.in/yaml.v2"
 	"github.com/netzkern/butler/commands/confluence"
 	"github.com/netzkern/butler/commands/confluence/builder"
 	"github.com/netzkern/butler/commands/confluence/space"
@@ -21,6 +20,7 @@ import (
 	"github.com/urfave/cli"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/core"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -48,6 +48,7 @@ var (
 		"Exit",
 	}
 	devCommands = []string{
+		"Dump config",
 		"Auto Update",
 		"Report a bug",
 		"Version",
@@ -116,6 +117,8 @@ func listMaintananceCommands() {
 	answer := showMaintananceCommands()
 
 	switch taskType := answer.Action; taskType {
+	case "Dump config":
+		dumpConfig()
 	case "Auto Update":
 		updater.ConfirmAndSelfUpdate(repository, version)
 	case "Report a bug":
@@ -258,14 +261,14 @@ func interactiveCliMode() {
 	case "Exit":
 		os.Exit(0)
 	default:
-		logy.Infof("Command %s is not implemented!", taskType)
+		logy.Infof("Command '%s' is not implemented!", taskType)
 		return
 	}
 
 	fmt.Println("Command executed successfully")
 }
 
-func dumpConfig(c *cli.Context) error {
+func dumpConfig() error {
 	str, err := yaml.Marshal(cfg)
 
 	if err != nil {
@@ -308,9 +311,9 @@ func cliMode() {
 			},
 		},
 		{
-			Name: "dump-config",
-			Usage: "Dumps the final config file",
-			Action: dumpConfig,
+			Name:   "dump-config",
+			Usage:  "Dumps the final config file",
+			Action: func(c *cli.Context) error { return dumpConfig() },
 		},
 	}
 
