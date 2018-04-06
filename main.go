@@ -309,7 +309,7 @@ func cliMode() {
 		},
 		{
 			Name: "dump-config",
-			Usage: "Dumps the merged butler.yml",
+			Usage: "Dumps the final config file",
 			Action: dumpConfig,
 		},
 	}
@@ -317,7 +317,11 @@ func cliMode() {
 	sort.Sort(cli.FlagsByName(app.Flags))
 	sort.Sort(cli.CommandsByName(app.Commands))
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+
+	if err != nil {
+		logy.Fatalf("Failed executing command, see %s", err)
+	}
 }
 
 func setLogLevel(level string) {

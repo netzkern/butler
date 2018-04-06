@@ -2,6 +2,7 @@ package config
 
 import (
 	"path"
+	"os"
 	"os/user"
 	"io/ioutil"
 	"net/http"
@@ -93,24 +94,32 @@ func ParseConfig(filename string) *Config {
 
 	if usr != nil {
 		homePath := path.Join(usr.HomeDir, "." + "butler.yml")
-		homeCfg, err = ParseConfigFile(homePath)
 
-		if err != nil {
-			ctx.Warnf(
-				"couldn't load user config file from %s, see %s",
-				homePath,
-				err.Error())
-		} else {
-			cfg = mergeConfigs(cfg, homeCfg)
+		if _, err = os.Stat(homePath); !os.IsNotExist(err) {
+			homeCtx := logy.WithFields(logy.Fields{
+			"config": homePath,
+			})
+
+			homeCfg, err = ParseConfigFile(homePath)
+
+			if err != nil {
+				homeCtx.Warnf(
+					"couldn't load user config file from, see %s",
+					err.Error())
+			} else {
+				cfg = mergeConfigs(cfg, homeCfg)
+			}
 		}
 	}
 
-	localCfg, err := ParseConfigFile(filename)
+	if _, err = os.Stat(filename); !os.IsNotExist(err) {
+		localCfg, err := ParseConfigFile(filename)
 
-	if err != nil {
-		ctx.Warnf("couldn't load config from %s, see %s", filename, err.Error())
-	} else {
-		cfg = mergeConfigs(cfg, localCfg)
+		if err != nil {
+			ctx.Warnf("couldn't load config from,  see %s", err.Error())
+		} else {
+			cfg = mergeConfigs(cfg, localCfg)
+		}
 	}
 	
 	err = envconfig.Process("butler", cfg)
@@ -140,8 +149,8 @@ func ParseConfig(filename string) *Config {
 					Fatalf("could not handle BUTLER_CONFIG_URL as file system uri")
 			}
 		}
-		
-		err = yaml.Unmarshal(dat, &cfgExt)
+
+		err = yaml.Unmarshal(dat, cfgExt)
 
 		if err != nil {
 			ctx.WithField("url", cfg.ConfigURL).
