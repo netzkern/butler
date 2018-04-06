@@ -10,6 +10,7 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	logy "github.com/apex/log"
+	yaml "gopkg.in/yaml.v2"
 	"github.com/netzkern/butler/commands/confluence"
 	"github.com/netzkern/butler/commands/confluence/builder"
 	"github.com/netzkern/butler/commands/confluence/space"
@@ -264,6 +265,18 @@ func interactiveCliMode() {
 	fmt.Println("Command executed successfully")
 }
 
+func dumpConfig(c *cli.Context) error {
+	str, err := yaml.Marshal(cfg)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(str))
+
+	return nil
+}
+
 func cliMode() {
 	type surveyResult map[string]interface{}
 
@@ -282,6 +295,7 @@ func cliMode() {
 			EnvVar: "BUTLER_LOG_LEVEL",
 		},
 	}
+
 	app.Commands = []cli.Command{
 		{
 			Name:    "interactive",
@@ -292,6 +306,11 @@ func cliMode() {
 				interactiveCliMode()
 				return nil
 			},
+		},
+		{
+			Name: "dump-config",
+			Usage: "Dumps the merged butler.yml",
+			Action: dumpConfig,
 		},
 	}
 
