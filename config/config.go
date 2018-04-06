@@ -1,6 +1,8 @@
 package config
 
 import (
+	"path"
+	"os/user"
 	"io/ioutil"
 	"net/http"
 
@@ -50,40 +52,84 @@ func downloadConfig(path string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
+func ParseConfigFile(filename string) (*Config, error) {
+	dat, err := ioutil.ReadFile(filename)
+
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := &Config{
+		Templates: []Template{},
+		Variables: map[string]interface{}{},
+	}
+
+	err = yaml.Unmarshal(dat, &cfg)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
 // ParseConfig returns the yaml parsed config
 func ParseConfig(filename string) *Config {
 	ctx := logy.WithFields(logy.Fields{
 		"config": filename,
 	})
 
+	usr, err := user.Current()
+
+	if err != nil {
+		ctx.Warnf("couldn't retrieve current user, see %s", err)
+	}
+
 	cfg := &Config{
 		Templates: []Template{},
 		Variables: map[string]interface{}{},
 	}
-	dat, err := ioutil.ReadFile(filename)
+
+	var homeCfg *Config
+
+	if usr != nil {
+		homePath := path.Join(usr.HomeDir, "." + "butler.yml")
+		homeCfg, err = ParseConfigFile(homePath)
+
+		if err != nil {
+			ctx.Warnf(
+				"couldn't load user config file from %s, see %s",
+				homePath,
+				err.Error())
+		} else {
+			cfg = mergeConfigs(cfg, homeCfg)
+		}
+	}
+
+	localCfg, err := ParseConfigFile(filename)
+
 	if err != nil {
-		ctx.Warnf("%s could not be found", filename)
+		ctx.Warnf("couldn't load config from %s, see %s", filename, err.Error())
+	} else {
+		cfg = mergeConfigs(cfg, localCfg)
 	}
-
-	cfgExt := &Config{
-		Templates: []Template{},
-		Variables: map[string]interface{}{},
-	}
-
-	err = yaml.Unmarshal(dat, &cfg)
-	if err != nil {
-		ctx.Fatalf("could not unmarshal %s", err.Error())
-	}
-
+	
 	err = envconfig.Process("butler", cfg)
+
 	if err != nil {
 		ctx.Fatalf("could not inject env variables %s", err.Error())
 	}
 
 	// check for external configUrl in env
 	if cfg.ConfigURL != "" {
+		cfgExt := &Config{
+			Templates: []Template{},
+			Variables: map[string]interface{}{},
+		}
+
 		ctx.WithField("url", cfg.ConfigURL).
 			Debugf("loading external config")
+
 		var dat []byte
 
 		if utils.Exists(cfg.ConfigURL) {
@@ -95,7 +141,9 @@ func ParseConfig(filename string) *Config {
 			ctx.WithField("url", cfg.ConfigURL).
 				Errorf("could not read config from external url")
 		}
+		
 		err = yaml.Unmarshal(dat, &cfgExt)
+
 		if err != nil {
 			ctx.WithField("url", cfg.ConfigURL).
 				Fatalf("could not unmarshal external config %s", err.Error())
