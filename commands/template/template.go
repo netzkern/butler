@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
@@ -71,6 +72,7 @@ type (
 		dirRenamings    map[string]string
 		dirRemovings    []string
 		gitDir          string
+		cwd             string
 		butlerVersion   semver.Version
 	}
 	// TemplateData basic template data
@@ -113,14 +115,21 @@ func New(options ...Option) *Templating {
 		"index":        strings.Index,
 		"repeat":       strings.Repeat,
 		"split":        strings.Split,
+		// path
+		"joinPath": filepath.Join,
+		"relPath":  filepath.Rel,
+		"basePath": filepath.Base,
+		"extPath":  filepath.Ext,
+		"absPath":  filepath.Abs,
 		// regexp
 		"regex": func(str string) *regexp.Regexp {
 			return regexp.MustCompile(str)
 		},
 		// generators
-		"uuid": uuid.NewV4,
+		"uuid":      uuid.NewV4,
+		"randomInt": func(min, max int) int { return rand.Intn(max-min) + min },
 		//environment
-		"cwd": func() string { return t.gitDir },
+		"cwd": func() (string, error) { return filepath.Abs(t.CommandData.Path) },
 		"env": func(name string) string { return os.Getenv(name) },
 	}
 
@@ -131,6 +140,13 @@ func New(options ...Option) *Templating {
 func WithGitDir(dir string) Option {
 	return func(t *Templating) {
 		t.gitDir = dir
+	}
+}
+
+// WithCwd option.
+func WithCwd(dir string) Option {
+	return func(t *Templating) {
+		t.cwd = dir
 	}
 }
 
@@ -283,15 +299,6 @@ func (t *Templating) getTemplateOptions() []string {
 func (t *Templating) getQuestions() []*survey.Question {
 	qs := []*survey.Question{
 		{
-			Name:     "Template",
-			Validate: survey.Required,
-			Prompt: &survey.Select{
-				Message: "Please select a template",
-				Options: t.getTemplateOptions(),
-				Help:    "You can add additional templates in your config",
-			},
-		},
-		{
 			Name: "Name",
 			Prompt: &survey.Input{
 				Message: "What's the project name?",
@@ -315,8 +322,25 @@ func (t *Templating) getQuestions() []*survey.Question {
 			Validate: survey.Required,
 			Prompt: &survey.Input{
 				Message: "What's the destination?",
-				Default: "src",
-				Help:    "The place of your new project",
+				Default: t.cwd,
+				Help:    "The path to your new project",
+			},
+		},
+	}
+
+	return qs
+}
+
+// getTemplateQuestions return all required prompts
+func (t *Templating) getTemplateQuestions() []*survey.Question {
+	qs := []*survey.Question{
+		{
+			Name:     "Template",
+			Validate: survey.Required,
+			Prompt: &survey.Select{
+				Message: "Please select a template",
+				Options: t.getTemplateOptions(),
+				Help:    "You can add additional templates in your config",
 			},
 		},
 	}
@@ -354,19 +378,24 @@ func (t *Templating) skip(path string, info os.FileInfo) (bool, error) {
 	return false, nil
 }
 
-// StartCommandSurvey collect all required informations from user
+// StartCommandSurvey ask the user for the template
 func (t *Templating) StartCommandSurvey() error {
 	var cd = &CommandData{}
+	err := survey.Ask(t.getTemplateQuestions(), cd)
+	if err != nil {
+		return errors.Wrap(err, "template command survey")
+	}
+	t.CommandData = cd
+	t.CommandData.Path = path.Clean(t.CommandData.Path)
+	return nil
+}
 
-	// start command prompts
-	err := survey.Ask(t.getQuestions(), cd)
+// startProjectSurvey ask the user for project details
+func (t *Templating) startProjectSurvey() error {
+	err := survey.Ask(t.getQuestions(), t.CommandData)
 	if err != nil {
 		return errors.Wrap(err, "command survey")
 	}
-
-	t.CommandData = cd
-	t.CommandData.Path = path.Clean(cd.Path)
-
 	return nil
 }
 
@@ -752,9 +781,21 @@ func (t *Templating) Run() (err error) {
 
 		t.templateConfig = templateConfig
 
+		err = t.startProjectSurvey()
+		if err != nil {
+			ctx.WithError(err).Error("start project survey")
+			return err
+		}
+
 		err = t.startTemplateSurvey(templateConfig)
 		if err != nil {
 			ctx.WithError(err).Error("start template survey")
+			return err
+		}
+	} else {
+		err := t.startProjectSurvey()
+		if err != nil {
+			ctx.WithError(err).Error("start project survey")
 			return err
 		}
 	}
