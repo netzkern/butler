@@ -143,6 +143,7 @@ func MoveDir(src string, dst string) (err error) {
 }
 
 // Exists return true when file or dir exists
+// On path error it will return false too
 func Exists(name string) bool {
 	if _, err := os.Stat(name); err != nil {
 		return false

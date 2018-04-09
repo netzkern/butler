@@ -111,8 +111,8 @@ func (g *Githook) getQuestions() []*survey.Question {
 			Name:     "Path",
 			Validate: survey.Required,
 			Prompt: &survey.Input{
-				Message: "What's the destination?",
-				Default: ".",
+				Message: "What's the root directory of your git repository?",
+				Default: g.GitDir,
 			},
 		},
 		{

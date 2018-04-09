@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
@@ -71,6 +72,7 @@ type (
 		dirRenamings    map[string]string
 		dirRemovings    []string
 		gitDir          string
+		cwd             string
 		butlerVersion   semver.Version
 	}
 	// TemplateData basic template data
@@ -113,14 +115,21 @@ func New(options ...Option) *Templating {
 		"index":        strings.Index,
 		"repeat":       strings.Repeat,
 		"split":        strings.Split,
+		// path
+		"joinPath": filepath.Join,
+		"relPath":  filepath.Rel,
+		"basePath": filepath.Base,
+		"extPath":  filepath.Ext,
+		"absPath":  filepath.Abs,
 		// regexp
 		"regex": func(str string) *regexp.Regexp {
 			return regexp.MustCompile(str)
 		},
 		// generators
-		"uuid": uuid.NewV4,
+		"uuid":      uuid.NewV4,
+		"randomInt": func(min, max int) int { return rand.Intn(max-min) + min },
 		//environment
-		"cwd": func() string { return t.gitDir },
+		"cwd": func() string { return t.cwd },
 		"env": func(name string) string { return os.Getenv(name) },
 	}
 
@@ -131,6 +140,13 @@ func New(options ...Option) *Templating {
 func WithGitDir(dir string) Option {
 	return func(t *Templating) {
 		t.gitDir = dir
+	}
+}
+
+// WithCwd option.
+func WithCwd(dir string) Option {
+	return func(t *Templating) {
+		t.cwd = dir
 	}
 }
 
@@ -315,7 +331,7 @@ func (t *Templating) getQuestions() []*survey.Question {
 			Validate: survey.Required,
 			Prompt: &survey.Input{
 				Message: "What's the destination?",
-				Default: "src",
+				Default: t.cwd,
 				Help:    "The place of your new project",
 			},
 		},

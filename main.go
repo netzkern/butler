@@ -152,7 +152,7 @@ func interactiveCliMode() {
 			template.WithVariables(cfg.Variables),
 			template.SetConfigName(surveyFilename),
 			template.WithButlerVersion(version),
-			template.WithGitDir(cd),
+			template.WithCwd(cd),
 		)
 
 		err := command.StartCommandSurvey()

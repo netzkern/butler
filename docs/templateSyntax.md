@@ -41,6 +41,16 @@ Custom variables can be defined in the local `butler.yml` file or in the templat
 butler{ .Vars.company }
 ```
 
+## Trim spaces around template actions
+
+```go
+{{23 -}} // remove trailing space
+   <
+{{- 45}} // remove leading space
+```
+
+formats as `23<45`
+
 ## Helper functions
 
 ### String
@@ -56,6 +66,14 @@ butler{ .Vars.company }
 * `butler{ repeat $string $count }` Repeat returns a new string consisting of count copies of the string s.
 * `butler{ split $string $sep }` Split slices s into all substrings separated by sep and returns a slice of the substrings between those separators.
 
+### Path
+
+* `butler{ joinPath $path, $path2 }` Join joins any number of path elements into a single path, adding a Separator if necessary.
+* `butler{ relPath $path }` Rel returns a relative path that is lexically equivalent to targpath when joined to basepath with an intervening separator.
+* `butler{ absPath $path }` Abs returns an absolute representation of path.
+* `butler{ basePath $path }` Base returns the last element of path.
+* `butler{ extPath $path }` Ext returns the file name extension used by path.
+
 ### Regex
 
 * `butler{ (regex "[0-9]+").FindString "I'm 26 years old" }` Returns `26`
@@ -64,6 +82,7 @@ butler{ .Vars.company }
 ### Generators
 
 * `butler{ uuid }` Returns a random UUID Version 4 string.
+* `butler{ randomInt $min $max }` Returns a random int between min and max
 
 ### Environment
 
