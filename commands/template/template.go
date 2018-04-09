@@ -378,7 +378,7 @@ func (t *Templating) skip(path string, info os.FileInfo) (bool, error) {
 	return false, nil
 }
 
-// StartCommandSurvey ask the user to select a specific template
+// StartCommandSurvey ask the user for the template
 func (t *Templating) StartCommandSurvey() error {
 	var cd = &CommandData{}
 	err := survey.Ask(t.getTemplateQuestions(), cd)
@@ -390,8 +390,8 @@ func (t *Templating) StartCommandSurvey() error {
 	return nil
 }
 
-// startTemplateSelectionSurvey collect all required informations from user
-func (t *Templating) startTemplateSelectionSurvey() error {
+// startProjectSurvey ask the user for project details
+func (t *Templating) startProjectSurvey() error {
 	err := survey.Ask(t.getQuestions(), t.CommandData)
 	if err != nil {
 		return errors.Wrap(err, "command survey")
@@ -781,9 +781,9 @@ func (t *Templating) Run() (err error) {
 
 		t.templateConfig = templateConfig
 
-		err = t.startTemplateSelectionSurvey()
+		err = t.startProjectSurvey()
 		if err != nil {
-			ctx.WithError(err).Error("start default template survey")
+			ctx.WithError(err).Error("start project survey")
 			return err
 		}
 
@@ -793,9 +793,9 @@ func (t *Templating) Run() (err error) {
 			return err
 		}
 	} else {
-		err := t.startTemplateSelectionSurvey()
+		err := t.startProjectSurvey()
 		if err != nil {
-			ctx.WithError(err).Error("start default template survey")
+			ctx.WithError(err).Error("start project survey")
 			return err
 		}
 	}
