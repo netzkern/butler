@@ -299,15 +299,6 @@ func (t *Templating) getTemplateOptions() []string {
 func (t *Templating) getQuestions() []*survey.Question {
 	qs := []*survey.Question{
 		{
-			Name:     "Template",
-			Validate: survey.Required,
-			Prompt: &survey.Select{
-				Message: "Please select a template",
-				Options: t.getTemplateOptions(),
-				Help:    "You can add additional templates in your config",
-			},
-		},
-		{
 			Name: "Name",
 			Prompt: &survey.Input{
 				Message: "What's the project name?",
@@ -332,7 +323,24 @@ func (t *Templating) getQuestions() []*survey.Question {
 			Prompt: &survey.Input{
 				Message: "What's the destination?",
 				Default: t.cwd,
-				Help:    "The place of your new project",
+				Help:    "The path to your new project",
+			},
+		},
+	}
+
+	return qs
+}
+
+// getTemplateQuestions return all required prompts
+func (t *Templating) getTemplateQuestions() []*survey.Question {
+	qs := []*survey.Question{
+		{
+			Name:     "Template",
+			Validate: survey.Required,
+			Prompt: &survey.Select{
+				Message: "Please select a template",
+				Options: t.getTemplateOptions(),
+				Help:    "You can add additional templates in your config",
 			},
 		},
 	}
@@ -370,19 +378,24 @@ func (t *Templating) skip(path string, info os.FileInfo) (bool, error) {
 	return false, nil
 }
 
-// StartCommandSurvey collect all required informations from user
+// StartCommandSurvey ask the user to select a specific template
 func (t *Templating) StartCommandSurvey() error {
 	var cd = &CommandData{}
+	err := survey.Ask(t.getTemplateQuestions(), cd)
+	if err != nil {
+		return errors.Wrap(err, "template command survey")
+	}
+	t.CommandData = cd
+	t.CommandData.Path = path.Clean(t.CommandData.Path)
+	return nil
+}
 
-	// start command prompts
-	err := survey.Ask(t.getQuestions(), cd)
+// startTemplateSelectionSurvey collect all required informations from user
+func (t *Templating) startTemplateSelectionSurvey() error {
+	err := survey.Ask(t.getQuestions(), t.CommandData)
 	if err != nil {
 		return errors.Wrap(err, "command survey")
 	}
-
-	t.CommandData = cd
-	t.CommandData.Path = path.Clean(cd.Path)
-
 	return nil
 }
 
@@ -768,9 +781,21 @@ func (t *Templating) Run() (err error) {
 
 		t.templateConfig = templateConfig
 
+		err = t.startTemplateSelectionSurvey()
+		if err != nil {
+			ctx.WithError(err).Error("start default template survey")
+			return err
+		}
+
 		err = t.startTemplateSurvey(templateConfig)
 		if err != nil {
 			ctx.WithError(err).Error("start template survey")
+			return err
+		}
+	} else {
+		err := t.startTemplateSelectionSurvey()
+		if err != nil {
+			ctx.WithError(err).Error("start default template survey")
 			return err
 		}
 	}

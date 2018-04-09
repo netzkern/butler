@@ -7,8 +7,8 @@ If you create a new git hook file you have to excute the command again.
 ## Usage
 
 1.  Create a folder `$GIT_DIR/git_hooks` in the root directory of your template.
-2.  Create a git hook specific file in `git_hooks` e.g `$GIT_DIR/git_hooks/pre-commit`
-3.  Run Butler and run `Install Git Hooks`
+2.  Create a git hook specific file in `git_hooks` e.g `$GIT_DIR/git_hooks/pre-commit`.
+3.  Run Butler and execute `Create Git Hooks` command.
 
 **pre-commit**
 
