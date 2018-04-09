@@ -1,9 +1,9 @@
 # Development
 
 ## Installation
-```
-$ go get ./...
-```
+
+1. Install https://github.com/golang/dep
+2. Run `dep ensure`
 
 ## Build Binaries
 
