@@ -20,11 +20,16 @@ confluence:
             - name: Getting Started
 ```
 
-#### Custom variables
+## Custom variables
 
 You can define custom variables to use them inside project templates. Custom template variables have priority over local variables.
 
-### Distribute config
+## Config places
 
-You can set the environment variable `BUTLER_CONFIG_URL` to any url to load your config from an external or local storage.
-This make it easy to distribute template updates across a company. You local configuration is merged.
+Butler searches for three different places for a `butler.yml` file.
+
+* From your user space `~/.butler/.butler.yml`
+* From your current working directory `.butler.yml`
+* From the `BUTLER_CONFIG_URL` environment variable (Support also local paths)
+
+The order above displays the merge order.
