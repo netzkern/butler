@@ -46,6 +46,7 @@ or `.tmpl` files
 - **Create Git Hooks:** This command will install all selected hooks.
 - **Create Confluence Space:** This command will create a public or private confluence space based on the selected template.
 - **Maintanance:**
+  - **Dump config:** Prints the final butler config in the terminal.
   - **Auto Update:** This command will update Butler to the latest version.
   - **Report a bug:** This command will open a new Github issue.
   - **Version:** This command will return the current version of Butler.
