@@ -71,7 +71,7 @@ func WithCommandData(cd *CommandData) Option {
 // Install will create hard links from local git_hooks to the corresponding git hooks
 func (g *Githook) install() error {
 	for _, h := range g.CommandData.Hooks {
-		hookGitPath := path.Join(g.GitDir, ".git", "hooks", h)
+		hookGitPath := path.Join(g.CommandData.Path, ".git", "hooks", h)
 		hookRepoPath := path.Join(g.CommandData.Path, repoHookDir, h)
 
 		if !utils.Exists(hookGitPath) {
@@ -93,9 +93,9 @@ func (g *Githook) install() error {
 			err := os.Link(hookRepoPath, hookGitPath)
 			if err != nil {
 				logy.WithError(err).Errorf("could not link hook '%s'", h)
-				return err
+			} else {
+				logy.Infof("hook '%s' installed", h)
 			}
-			logy.Infof("hook '%s' installed", h)
 		} else {
 			logy.Debugf("template for hook '%s' could not be found in '%s'", h, path.Join(g.CommandData.Path, repoHookDir))
 		}
