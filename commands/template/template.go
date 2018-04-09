@@ -129,7 +129,7 @@ func New(options ...Option) *Templating {
 		"uuid":      uuid.NewV4,
 		"randomInt": func(min, max int) int { return rand.Intn(max-min) + min },
 		//environment
-		"cwd": func() string { return t.cwd },
+		"cwd": func() (string, error) { return filepath.Abs(t.CommandData.Path) },
 		"env": func(name string) string { return os.Getenv(name) },
 	}
 
