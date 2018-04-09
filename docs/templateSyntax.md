@@ -68,11 +68,11 @@ formats as `23<45`
 
 ### Path
 
-* `butler{ joinPath $path, $path2 }` Join joins any number of path elements into a single path, adding a Separator if necessary.
-* `butler{ relPath $path }` Rel returns a relative path that is lexically equivalent to targpath when joined to basepath with an intervening separator.
-* `butler{ absPath $path }` Abs returns an absolute representation of path.
-* `butler{ basePath $path }` Base returns the last element of path.
-* `butler{ extPath $path }` Ext returns the file name extension used by path.
+* `butler{ joinPath $path, $path2 }` Joins any number of path elements into a single path, adding a Separator if necessary.
+* `butler{ relPath $path }` Returns a relative path that is lexically equivalent to targpath when joined to basepath with an intervening separator.
+* `butler{ absPath $path }` Returns an absolute representation of path.
+* `butler{ basePath $path }` Returns the last element of path.
+* `butler{ extPath $path }` Returns the file name extension used by path.
 
 ### Regex
 
