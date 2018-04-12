@@ -426,6 +426,44 @@ func (t *Templating) startTemplateSurvey() error {
 	return nil
 }
 
+func (t *Templating) parseStringAsTemplate(name, text, startDel, endDel string) (string, error) {
+	tpl, err := template.New(name).
+		Delims(startDel, endDel).
+		Funcs(t.templateFuncMap).
+		Parse(text)
+
+	if err != nil {
+		return "", errors.Wrap(err, "parse template as string")
+	}
+
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, t.TemplateData)
+	if err != nil {
+		return "", errors.Wrap(err, "execute template as string")
+	}
+
+	return buf.String(), err
+}
+
+func (t *Templating) parseStringAsTemplateCondition(name, text, startDel, endDel string) (bool, error) {
+	tpl, err := template.New(name).
+		Delims(startDel, endDel).
+		Funcs(t.templateFuncMap).
+		Parse("{if " + text + "}true{end}")
+
+	if err != nil {
+		return false, errors.Wrap(err, "parse template as condition")
+	}
+
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, t.TemplateData)
+	if err != nil {
+		return false, errors.Wrap(err, "execute template as condition")
+	}
+
+	return buf.String() == "true", err
+}
+
 // runSurveyTemplateHooks run all template hooks
 func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 	for i, hook := range t.templateConfig.AfterHooks {
@@ -434,31 +472,25 @@ func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 			"args": hook.Args,
 		})
 
-		// check if cmd should be run
 		if strings.TrimSpace(hook.Enabled) != "" {
-			tpl, err := template.New(hook.Cmd).
-				Delims("{", "}").
-				Funcs(t.templateFuncMap).
-				Parse("{if " + hook.Enabled + "}true{end}")
-
+			dat, err := t.parseStringAsTemplateCondition(hook.Cmd, hook.Enabled, startNameDelim, endNameDelim)
 			if err != nil {
 				return errors.Wrap(err, "parse hook template")
 			}
-
-			var buf bytes.Buffer
-			tpl.Execute(&buf, t.TemplateData)
-			if buf.String() != "true" {
+			if !dat {
+				ctx.Debug("skipped")
 				continue
 			}
-			ctx.Debug("skipped")
 		}
 
 		cmd := exec.Command(hook.Cmd, hook.Args...)
 		cmd.Dir = cmdDir
+
 		// inherit process env
 		cmd.Env = append(mapToEnvArray(t.surveyResult, envPrefix), os.Environ()...)
 		cmd.Stdout = os.Stdout
 		cmd.Stdin = os.Stdin
+
 		err := cmd.Run()
 		if err != nil {
 			return errors.Wrapf(err, "command %d ('%s') could not be executed", i, hook.Cmd)
@@ -475,16 +507,11 @@ func (t *Templating) parseSurveyTemplateVariables() error {
 			if strings.TrimSpace(varString) == "" {
 				return nil
 			}
-			tpl, err := template.New(k).
-				Delims("{", "}").
-				Funcs(t.templateFuncMap).
-				Parse(varString)
+			dat, err := t.parseStringAsTemplate(k, varString, startNameDelim, endNameDelim)
 			if err != nil {
 				return errors.Wrap(err, "parse variable template")
 			}
-			var buf bytes.Buffer
-			tpl.Execute(&buf, t.TemplateData)
-			t.Variables[k] = buf.String()
+			t.Variables[k] = dat
 		}
 	}
 
@@ -541,26 +568,11 @@ func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) e
 	}
 
 	// Template directory
-	tplDir, err := template.New(path).
-		Delims(startNameDelim, endNameDelim).
-		Funcs(t.templateFuncMap).
-		Parse(info.Name())
-
+	newDirectory, err := t.parseStringAsTemplate(path, info.Name(), startNameDelim, endNameDelim)
 	if err != nil {
-		err := errors.Wrap(err, "create template for directory")
-		ctx.WithError(err)
-		return err
+		return errors.Wrap(err, "parse template for directory")
 	}
 
-	var dirNameBuffer bytes.Buffer
-	err = tplDir.Execute(&dirNameBuffer, t.TemplateData)
-	if err != nil {
-		err := errors.Wrap(err, "execute template for directory")
-		ctx.WithError(err)
-		return err
-	}
-
-	newDirectory := dirNameBuffer.String()
 	newPath := filepath.Join(filepath.Dir(path), newDirectory)
 
 	// when directory template expression was evaluated to empty
@@ -616,24 +628,11 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 // templater is responsible to parse files, rename or delete files and write the output back to the file.
 // t.TemplateData and t.templateFuncMap are read-only
 func (t *Templating) templater(path, filename string, ctx *logy.Entry) error {
-	tplFilename, err := template.New(path).
-		Delims(startNameDelim, endNameDelim).
-		Funcs(t.templateFuncMap).
-		Parse(filename)
-
+	newFilename, err := t.parseStringAsTemplate(path, filename, startNameDelim, endNameDelim)
 	if err != nil {
-		ctx.WithError(err).Error("create template for filename")
-		return err
+		return errors.Wrap(err, "parse variable template")
 	}
 
-	var filenameBuffer bytes.Buffer
-	err = tplFilename.Execute(&filenameBuffer, t.TemplateData)
-	if err != nil {
-		ctx.WithError(err).Error("execute template for filename")
-		return err
-	}
-
-	newFilename := filenameBuffer.String()
 	newPath := filepath.Join(filepath.Dir(path), newFilename)
 
 	// when filename condition was evaluated to false
@@ -810,17 +809,17 @@ func (t *Templating) Run() (err error) {
 			return err
 		}
 
-		err = t.startTemplateSurvey()
-		if err != nil {
-			ctx.WithError(err).Error("start template survey")
-			return err
-		}
-
 		t.TemplateData = &TemplateData{
 			t.CommandData,
 			time.Now().Format(time.RFC3339),
 			time.Now().Year(),
 			t.Variables,
+		}
+
+		err = t.startTemplateSurvey()
+		if err != nil {
+			ctx.WithError(err).Error("start template survey")
+			return err
 		}
 
 		t.generateTempFuncs()
