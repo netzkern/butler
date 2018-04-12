@@ -6,11 +6,7 @@ var ExcludedDirs = []string{
 	"node_modules",
 	"bower_components",
 	"jspm_packages",
-	"dist",
-	"build",
 	"log",
 	"logs",
 	"bin",
-	"lib",
-	"typings",
 }
