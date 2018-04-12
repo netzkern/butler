@@ -208,10 +208,10 @@ func (t *Templating) unpackGitRepository(templatePath string, dest string) error
 }
 
 // unpackLocalGitRepository copy a local repository to the dst
-func (t *Templating) unpackLocalGitRepository(templatePath string, dest string) error {
-	logy.Debugf("unpack template from %s to %s", templatePath, dest)
+func (t *Templating) unpackLocalGitRepository(tempDir string, dest string) error {
+	logy.Debugf("unpack template from %s to %s", tempDir, dest)
 
-	err := utils.MoveDir(templatePath, dest)
+	err := utils.MoveDir(tempDir, dest)
 	if err != nil {
 		return errors.Wrap(err, "local repository could not be copied")
 	}
@@ -695,7 +695,7 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) error {
 
 // Run the command
 func (t *Templating) Run() (err error) {
-	tempDir, err := ioutil.TempDir(t.CommandData.Path, "butler")
+	tempDir, err := ioutil.TempDir("", "butler")
 	if err != nil {
 		err = errors.Wrap(err, "create temp folder failed")
 		return err
