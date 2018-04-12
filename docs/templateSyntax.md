@@ -55,7 +55,7 @@ formats as `23<45`
 
 ### String
 
-* `butler{ toCamelCase .Project.Name }` Convert argument to camelCase style string If argument is empty, return itself.
+* `butler{ toCamelCase $string }` Convert argument to camelCase style string If argument is empty, return itself.
 * `butler{ toPascalCase $string }` Convert argument to PascalCase style string If argument is empty, return itself.
 * `butler{ toSnakeCase $string }` Convert argument to snake_case style string. If argument is empty, return itself.
 * `butler{ toPascalCase $string }` Convert argument to PascalCase style string If argument is empty, return itself.
@@ -65,7 +65,7 @@ formats as `23<45`
 * `butler{ index $string $substring }` Contains reports whether substr is within s.
 * `butler{ repeat $string $count }` Repeat returns a new string consisting of count copies of the string s.
 * `butler{ split $string $sep }` Split slices s into all substrings separated by sep and returns a slice of the substrings between those separators.
-* `butler{ toLower .Project.Name }` Returns a copy of the string s with all Unicode letters mapped to their lower case.
+* `butler{ toLower $string }` Returns a copy of the string s with all Unicode letters mapped to their lower case.
 * `butler{ toUpper $string }` Returns a copy of the string s with all Unicode letters mapped to their upper case.
 
 ### Path
