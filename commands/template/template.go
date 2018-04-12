@@ -114,6 +114,8 @@ func New(options ...Option) *Templating {
 		"index":        strings.Index,
 		"repeat":       strings.Repeat,
 		"split":        strings.Split,
+		"toLower":      strings.ToLower,
+		"toUpper":      strings.ToUpper,
 		// path
 		"joinPath": filepath.Join,
 		"relPath":  filepath.Rel,
