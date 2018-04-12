@@ -71,7 +71,6 @@ type (
 		templateConfig  *Survey
 		dirRenamings    map[string]string
 		dirRemovings    []string
-		gitDir          string
 		cwd             string
 		butlerVersion   semver.Version
 	}
@@ -129,18 +128,11 @@ func New(options ...Option) *Templating {
 		"uuid":      uuid.NewV4,
 		"randomInt": func(min, max int) int { return rand.Intn(max-min) + min },
 		//environment
-		"cwd": func() (string, error) { return filepath.Abs(t.CommandData.Path) },
+		"cwd": func() string { return t.CommandData.Path },
 		"env": func(name string) string { return os.Getenv(name) },
 	}
 
 	return t
-}
-
-// WithGitDir option.
-func WithGitDir(dir string) Option {
-	return func(t *Templating) {
-		t.gitDir = dir
-	}
 }
 
 // WithCwd option.
@@ -194,6 +186,8 @@ func WithTemplateSurveyResults(sr map[string]interface{}) Option {
 
 // unpackGitRepository clone a repo to the dst
 func (t *Templating) unpackGitRepository(templatePath string, dest string) error {
+	logy.Debugf("unpack template from %s to %s", templatePath, dest)
+
 	_, err := git.PlainClone(dest, false, &git.CloneOptions{
 		URL: templatePath,
 	})
@@ -213,6 +207,8 @@ func (t *Templating) unpackGitRepository(templatePath string, dest string) error
 
 // unpackLocalGitRepository copy a local repository to the dst
 func (t *Templating) unpackLocalGitRepository(templatePath string, dest string) error {
+	logy.Debugf("unpack template from %s to %s", templatePath, dest)
+
 	err := utils.MoveDir(templatePath, dest)
 	if err != nil {
 		return errors.Wrap(err, "local repository could not be copied")
@@ -237,26 +233,20 @@ func (t *Templating) packTemplate(tempDir, dest string) error {
 		}
 	}
 
-	destAbs, err := filepath.Abs(dest)
+	logy.Debugf("pack template from %s to %s", tempDir, dest)
+
+	err := utils.CreateDirIfNotExist(dest)
 	if err != nil {
-		return errors.Wrap(err, "dest abs failed")
+		return errors.Wrap(err, "create dest dir failed")
 	}
 
-	// move files from temp to cd
-	if destAbs == t.gitDir {
-		err := utils.MoveDir(tempDir, t.gitDir)
-		if err != nil {
-			return errors.Wrap(err, "move failed")
-		}
-		err = os.RemoveAll(tempDir)
-		if err != nil {
-			return errors.Wrap(err, "remove all failed")
-		}
-	} else {
-		err := os.Rename(tempDir, dest)
-		if err != nil {
-			return errors.Wrap(err, "rename failed")
-		}
+	err = utils.MoveDir(tempDir, dest)
+	if err != nil {
+		return errors.Wrap(err, "move failed")
+	}
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		return errors.Wrap(err, "remove all failed")
 	}
 
 	return nil
@@ -386,7 +376,6 @@ func (t *Templating) StartCommandSurvey() error {
 		return errors.Wrap(err, "template command survey")
 	}
 	t.CommandData = cd
-	t.CommandData.Path = path.Clean(t.CommandData.Path)
 	return nil
 }
 
@@ -396,6 +385,11 @@ func (t *Templating) startProjectSurvey() error {
 	if err != nil {
 		return errors.Wrap(err, "command survey")
 	}
+	dest, err := filepath.Abs(t.CommandData.Path)
+	if err != nil {
+		return errors.Wrap(err, "dest path failed")
+	}
+	t.CommandData.Path = dest
 	return nil
 }
 
@@ -676,10 +670,14 @@ func (t *Templating) templater(path, filename string, ctx *logy.Entry) error {
 
 // Run the command
 func (t *Templating) Run() (err error) {
-	tempDir, err := ioutil.TempDir(t.gitDir, "butler")
+	tempDir, err := ioutil.TempDir(t.CommandData.Path, "butler")
 	if err != nil {
 		err = errors.Wrap(err, "create temp folder failed")
 		return err
+	}
+	tempDir, err = filepath.Abs(tempDir)
+	if err != nil {
+		return errors.Wrap(err, "temp abs failed")
 	}
 
 	// remove template artifacts when a panic or error occur
@@ -925,7 +923,7 @@ func (t *Templating) Run() (err error) {
 	* Git hook task
 	 */
 	commandGitHook := githook.New(
-		githook.WithGitDir(t.gitDir),
+		githook.WithCwd(t.cwd),
 		githook.WithCommandData(
 			&githook.CommandData{
 				Path:  t.CommandData.Path,

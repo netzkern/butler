@@ -36,7 +36,7 @@ type CommandData struct {
 // Githook command to create git hooks
 type Githook struct {
 	Path        string
-	GitDir      string
+	Cwd         string
 	CommandData *CommandData
 }
 
@@ -54,10 +54,10 @@ func New(options ...Option) *Githook {
 	return v
 }
 
-// WithGitDir option.
-func WithGitDir(dir string) Option {
+// WithCwd option.
+func WithCwd(dir string) Option {
 	return func(g *Githook) {
-		g.GitDir = dir
+		g.Cwd = dir
 	}
 }
 
@@ -112,7 +112,7 @@ func (g *Githook) getQuestions() []*survey.Question {
 			Validate: survey.Required,
 			Prompt: &survey.Input{
 				Message: "What's the root directory of your git repository?",
-				Default: g.GitDir,
+				Default: g.Cwd,
 			},
 		},
 		{

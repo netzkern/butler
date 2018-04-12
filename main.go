@@ -243,7 +243,7 @@ func interactiveCliMode() {
 			}
 		}
 	case "Create Git Hooks":
-		command := githook.New(githook.WithGitDir(cd))
+		command := githook.New(githook.WithCwd(cd))
 
 		err := command.StartCommandSurvey()
 		if err != nil {
