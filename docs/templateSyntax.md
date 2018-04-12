@@ -33,14 +33,6 @@ _Butler maintain a [list](https://github.com/netzkern/butler/blob/master/command
 * `butler{ .Date }` Return the date (RFC3339)
 * `butler{ .Year }` Return the year (4-digits)
 
-## Access to custom variables
-
-Custom variables can be defined in the local `butler.yml` file or in the template `butler-survey.yml` file.
-
-```
-butler{ .Vars.company }
-```
-
 ## Trim spaces around template actions
 
 ```go
@@ -97,6 +89,28 @@ _All functions are written in camelCase_
 ```
 butler{$id := uuid} // generate id
 butler{$id} // print id
+```
+
+## Access to custom variables
+
+Custom variables can be defined in the local `butler.yml` file or in the template `butler-survey.yml` file.
+
+```
+butler{ .Vars.company }
+```
+
+## Interpolate survey variables
+
+You have access to the survey result as well as template helper in `butler-survey.yml` file.
+
+```yml
+variables:
+  projectName: "{ toUpperCase .Project.Name }"
+  dbName: "{ toPascalCase getDb }"
+```
+
+```
+butler{ .Vars.projectName }
 ```
 
 ## Get survey results

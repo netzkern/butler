@@ -409,8 +409,8 @@ func (t *Templating) confirmPackTemplate(msg string) (bool, error) {
 	return packTemplate, nil
 }
 
-func (t *Templating) startTemplateSurvey(surveys *Survey) error {
-	questions, err := BuildSurveys(surveys)
+func (t *Templating) startTemplateSurvey() error {
+	questions, err := BuildSurveys(t.templateConfig)
 	if err != nil {
 		return errors.Wrap(err, "build survey from template config")
 	}
@@ -442,7 +442,7 @@ func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 				Parse("{if " + hook.Enabled + "}true{end}")
 
 			if err != nil {
-				return errors.Wrap(err, "create template")
+				return errors.Wrap(err, "parse hook template")
 			}
 
 			var buf bytes.Buffer
@@ -461,7 +461,30 @@ func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 		cmd.Stdin = os.Stdin
 		err := cmd.Run()
 		if err != nil {
-			return errors.Wrapf(err, "Command %d ('%s') could not be executed", i, hook.Cmd)
+			return errors.Wrapf(err, "command %d ('%s') could not be executed", i, hook.Cmd)
+		}
+	}
+
+	return nil
+}
+
+// parseSurveyTemplateVariables template all survey variables
+func (t *Templating) parseSurveyTemplateVariables() error {
+	for k, v := range t.Variables {
+		if varString, ok := v.(string); ok {
+			if strings.TrimSpace(varString) == "" {
+				return nil
+			}
+			tpl, err := template.New(k).
+				Delims("{", "}").
+				Funcs(t.templateFuncMap).
+				Parse(varString)
+			if err != nil {
+				return errors.Wrap(err, "parse variable template")
+			}
+			var buf bytes.Buffer
+			tpl.Execute(&buf, t.TemplateData)
+			t.Variables[k] = buf.String()
 		}
 	}
 
@@ -787,16 +810,33 @@ func (t *Templating) Run() (err error) {
 			return err
 		}
 
-		err = t.startTemplateSurvey(templateConfig)
+		err = t.startTemplateSurvey()
 		if err != nil {
 			ctx.WithError(err).Error("start template survey")
 			return err
 		}
+
+		t.TemplateData = &TemplateData{
+			t.CommandData,
+			time.Now().Format(time.RFC3339),
+			time.Now().Year(),
+			t.Variables,
+		}
+
+		t.generateTempFuncs()
+		t.parseSurveyTemplateVariables()
+
 	} else {
 		err := t.startProjectSurvey()
 		if err != nil {
 			ctx.WithError(err).Error("start project survey")
 			return err
+		}
+		t.TemplateData = &TemplateData{
+			t.CommandData,
+			time.Now().Format(time.RFC3339),
+			time.Now().Year(),
+			t.Variables,
 		}
 	}
 
@@ -811,18 +851,6 @@ func (t *Templating) Run() (err error) {
 	* Templating task
 	 */
 	t.TaskTracker.Track("Template")
-
-	t.TemplateData = &TemplateData{
-		t.CommandData,
-		time.Now().Format(time.RFC3339),
-		time.Now().Year(),
-		t.Variables,
-	}
-
-	// create getter for survey result
-	if t.surveyResult != nil {
-		t.generateTempFuncs()
-	}
 
 	logy.Debugf("dir walk in path '%s'", tempDir)
 
