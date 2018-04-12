@@ -102,7 +102,7 @@ butler{ .Vars.company }
 
 ## Interpolate custom variables
 
-You have access to the survey result as well as template helper to define variables. This useful if you want to want to work with short names in file or directory names.
+You have access to the survey result as well as template helper to define variables. This is useful if you want to work with short names in file or directory names.
 
 ```yml
 variables:
