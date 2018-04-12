@@ -58,15 +58,14 @@ formats as `23<45`
 * `butler{ toCamelCase $string }` Convert argument to camelCase style string If argument is empty, return itself.
 * `butler{ toPascalCase $string }` Convert argument to PascalCase style string If argument is empty, return itself.
 * `butler{ toSnakeCase $string }` Convert argument to snake_case style string. If argument is empty, return itself.
-* `butler{ toPascalCase $string }` Convert argument to PascalCase style string If argument is empty, return itself.
+* `butler{ toLowerCase $string }` Convert argument to lowercase style string If argument is empty, return itself.
+* `butler{ toUpperCase $string }` Convert argument to UPPERCASE style string If argument is empty, return itself.
 * `butler{ join $array $seperator }` Join concatenates the elements of a to create a single string.
 * `butler{ replace $old $new $limit }` Replace returns a copy of the string s with the first n non-overlapping instances of old replaced by new.
 * `butler{ contains $string $substring }` Contains reports whether substr is within s.
 * `butler{ index $string $substring }` Contains reports whether substr is within s.
 * `butler{ repeat $string $count }` Repeat returns a new string consisting of count copies of the string s.
 * `butler{ split $string $sep }` Split slices s into all substrings separated by sep and returns a slice of the substrings between those separators.
-* `butler{ toLower $string }` Returns a copy of the string s with all Unicode letters mapped to their lower case.
-* `butler{ toUpper $string }` Returns a copy of the string s with all Unicode letters mapped to their upper case.
 
 ### Path
 
