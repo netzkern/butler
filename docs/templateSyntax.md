@@ -20,6 +20,7 @@ For directory or file names you have to use a different delimiter to save charac
 
 * Filenames
 * Directories
+* Template variables
 * Text files (.html, .md, .txt, .cshtml, .cs, .js ...)
 
 _Butler maintain a [list](https://github.com/netzkern/butler/blob/master/commands/template/binary_extensions.go) of extensions of binary files and disallow the parsing of these files_
@@ -99,16 +100,19 @@ Custom variables can be defined in the local `butler.yml` file or in the templat
 butler{ .Vars.company }
 ```
 
-## Interpolate survey variables
+## Interpolate custom variables
 
-You have access to the survey result as well as template helper in `butler-survey.yml` file.
+You have access to the survey result as well as template helper to define variables. This useful if you want to want to work with short names in file or directory names.
 
 ```yml
 variables:
+  email: test@email.de
   projectName: "{ toUpperCase .Project.Name }"
   dbName: "{ toPascalCase getDb }"
+  emailLowerCase: "{ toLowerCase .Vars.email }"
 ```
 
+Inside your template
 ```
 butler{ .Vars.projectName }
 ```
