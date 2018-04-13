@@ -484,16 +484,19 @@ func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 		}
 
 		cmd := exec.Command(hook.Cmd, hook.Args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stdin = os.Stdin
 		cmd.Dir = cmdDir
 
 		// inherit process env
 		cmd.Env = append(mapToEnvArray(t.surveyResult, envPrefix), os.Environ()...)
-		cmd.Stdout = os.Stdout
-		cmd.Stdin = os.Stdin
 
 		err := cmd.Run()
 		if err != nil {
-			return errors.Wrapf(err, "command %d ('%s') could not be executed", i, hook.Cmd)
+			ctx.WithError(err).Error("command failed")
+			if hook.Required {
+				return errors.Wrapf(err, "command %d ('%s') failed", i, hook.Cmd)
+			}
 		}
 	}
 
@@ -905,24 +908,6 @@ func (t *Templating) Run() (err error) {
 		errCount++
 	}
 
-	/**
-	* Template Hook task
-	 */
-	t.TaskTracker.Track("After hooks")
-
-	if t.surveyResult != nil {
-		logy.Debug("execute template hooks")
-		err = t.runSurveyTemplateHooks(tempDir)
-		if err != nil {
-			logy.WithError(err).Error("template hooks failed")
-			return err
-		}
-	} else {
-		logy.Debug("skip template hooks")
-	}
-
-	t.TaskTracker.UnTrack("After hooks")
-
 	var confirmMsg string
 	if errCount == 0 {
 		confirmMsg = fmt.Sprintf("Do you really want to checkout to '%s' ?", t.CommandData.Path)
@@ -947,6 +932,24 @@ func (t *Templating) Run() (err error) {
 		err = errManualTermination
 		return err
 	}
+
+	/**
+	* Template Hook task
+	 */
+	t.TaskTracker.Track("After hooks")
+
+	if t.surveyResult != nil {
+		logy.Debug("execute template hooks")
+		err = t.runSurveyTemplateHooks(t.CommandData.Path)
+		if err != nil {
+			logy.WithError(err).Error("template hooks failed")
+			return err
+		}
+	} else {
+		logy.Debug("skip template hooks")
+	}
+
+	t.TaskTracker.UnTrack("After hooks")
 
 	/**
 	* Git hook task

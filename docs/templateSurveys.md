@@ -28,14 +28,15 @@ afterHooks:
   - cmd:      The command to execute (string, required)
     args:     The arguments for the cmd ([]string, optional)
     enabled:  The template expression which has to be evaluated to `true` when `false` the command is skipped (string, optional)
+    required: The command is required and will abort the hooks pipeline when it couldn't be executed.
 
 variables:
   test:       The value for custom variable
 ```
 
-#### After hooks
+## After hooks
 
-Hooks are executed after the project is created. The hook pipeline is aborted when any command return an error.
+Hooks are executed after the project is created. The hook pipeline is aborted when a command return an error which was marked as `required:true`.
 The hook process will inherit all environment variables from the parent process.
 
 You have access to the survey results inside your hooks. The results are exposed with environment variables.
@@ -45,6 +46,6 @@ BUTLER_<NAME>=a # for single values
 BUTLER_<NAME>=a,b # for multiple values like "multiselect" question
 ```
 
-#### Custom variables
+## Custom variables
 
 You can define custom variables. In case of a conflict the template variables have priority over local variables.
