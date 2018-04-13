@@ -25,10 +25,12 @@ questions:
     required: Whether or not this question is required (boolean)
 
 afterHooks:
-  - cmd:      The command to execute (string, required)
+  - name:     The command name (string, required)
+    cmd:      The command to execute (string, required)
     args:     The arguments for the cmd ([]string, optional)
+    verbose:  The command output is printend in the terminal (string, optional)
     enabled:  The template expression which has to be evaluated to `true` when `false` the command is skipped (string, optional)
-    required: The command is required and will abort the hooks pipeline when it couldn't be executed.
+    required: The command is required and will abort the hooks pipeline when it couldn't be executed successfully (string, optional)
 
 variables:
   test:       The value for custom variable
