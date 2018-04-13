@@ -3,8 +3,6 @@ templates:
     url: https://github.com/netzkern/example-project-template.git
   - name: Kentico 8
     url: https://github.com/netzkern/example-project-template.git
-  - name: test
-    url: C:\Users\nk.dusdeu468\Documents\Repositorys\nk.DevOps.SC9.ButlerTemplate
 
 variables:
   company: netzkern
