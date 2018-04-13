@@ -1,9 +1,13 @@
 templates:
-  - name: Sitecore 9
+  - name: .NET Core
     url: https://github.com/netzkern/example-project-template.git
-  - name: Kentico 8
+  - name: Node.js
     url: https://github.com/netzkern/example-project-template.git
-
+  - name: Sitecore
+    url: https://github.com/netzkern/example-project-template.git
+  - name: Kentico
+    url: https://github.com/netzkern/example-project-template.git
+    
 variables:
   company: netzkern
   email: info@netzkern.de
