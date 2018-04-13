@@ -1017,7 +1017,7 @@ func (t *Templating) stop() {
 // defaultSpinner create a spinner with good default settings
 func defaultSpinner(suffix string) *spinner.Spinner {
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Suffix = suffix
+	s.Suffix = " " + suffix
 	return s
 }
 
