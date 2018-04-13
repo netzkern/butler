@@ -19,18 +19,18 @@ questions:
   - type:     The question type ([input, select, multiselect, password, confirm], required)
     name:     The indentifier of your question to access it in your template (string, required)
     message:  The question (string, required)
-    options:  The available options only required for question types of select and multiselect ([]string)
-    default:  The default value ([]string for select otherwise string)
+    options:  The available options only required for question types of select and multiselect ([]string, optional)
+    default:  The default value ([]string for select otherwise string, optional)
     help:     The help message (string, optional)
-    required: Whether or not this question is required (boolean)
+    required: Whether or not this question is required (boolean, optional)
 
 afterHooks:
   - name:     The command name (string, required)
     cmd:      The command to execute (string, required)
     args:     The arguments for the cmd ([]string, optional)
-    verbose:  The command output is printend in the terminal (string, optional)
+    verbose:  The command output is printend in the terminal (boolean, optional)
     enabled:  The template expression which has to be evaluated to `true` when `false` the command is skipped (string, optional)
-    required: The command is required and will abort the hooks pipeline when it couldn't be executed successfully (string, optional)
+    required: The command is required and will abort the hooks pipeline when it couldn't be executed successfully (boolean, optional)
 
 variables:
   test:       The value for custom variable
