@@ -21,8 +21,10 @@ type Question struct {
 
 // Hook represent a hook in the yml file
 type Hook struct {
+	Name     string   `json:"name" validate:"required"`
 	Cmd      string   `json:"cmd" validate:"required"`
 	Args     []string `json:"args"`
+	Verbose  bool     `json:"verbose"`
 	Enabled  string   `json:"enabled"`
 	Required bool     `json:"required"`
 }

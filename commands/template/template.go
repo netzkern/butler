@@ -484,14 +484,23 @@ func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 		}
 
 		cmd := exec.Command(hook.Cmd, hook.Args...)
-		cmd.Stdout = os.Stdout
-		cmd.Stdin = os.Stdin
-		cmd.Dir = cmdDir
-
 		// inherit process env
 		cmd.Env = append(mapToEnvArray(t.surveyResult, envPrefix), os.Environ()...)
+		cmd.Dir = cmdDir
+
+		var spinner *spinner.Spinner
+		if hook.Verbose {
+			cmd.Stdout = os.Stdout
+			cmd.Stdin = os.Stdin
+		} else {
+			spinner = defaultSpinner(fmt.Sprintf("Run hook '%s'...", hook.Name))
+			spinner.Start()
+		}
 
 		err := cmd.Run()
+		if spinner != nil {
+			spinner.Stop()
+		}
 		if err != nil {
 			ctx.WithError(err).Error("command failed")
 			if hook.Required {
