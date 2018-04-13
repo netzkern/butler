@@ -79,10 +79,14 @@ func init() {
 	logy.SetLevel(logy.InfoLevel)
 	cfg = config.ParseConfig(configName)
 
-	// Windows compatible symbols
-	// @todo check terminal encoding
+	// TERM contains a identifier for the text window’s capabilities (UNIX).
+	if os.Getenv("TERM") == "xterm-256color" {
+		return
+	}
+
+	// Fallback for Windows
 	if runtime.GOOS == "windows" {
-		core.ErrorIcon = "X"
+		core.ErrorIcon = "x"
 		core.HelpIcon = "????"
 		core.QuestionIcon = "?"
 		core.SelectFocusIcon = ">"
