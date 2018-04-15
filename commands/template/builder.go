@@ -55,6 +55,13 @@ func BuildSurveys(butlerSurveys ...*Survey) ([]*survey.Question, error) {
 					Name:   question.Name,
 					Prompt: p,
 				}
+				if question.Default != nil {
+					defaultValue, ok := question.Default.(bool)
+					if !ok {
+						return nil, fmt.Errorf("default value must be a boolean on confirm questions")
+					}
+					p.Default = defaultValue
+				}
 				if question.Required {
 					sqs.Validate = survey.Required
 				}
