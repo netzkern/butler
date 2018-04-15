@@ -410,7 +410,7 @@ func (t *Templating) confirmPackTemplate(msg string) (bool, error) {
 }
 
 func (t *Templating) startTemplateSurvey() error {
-	questions, err := BuildSurveys(t.templateConfig)
+	questions, err := BuildSurvey(t.templateConfig)
 	if err != nil {
 		return errors.Wrap(err, "build survey from template config")
 	}
@@ -426,44 +426,6 @@ func (t *Templating) startTemplateSurvey() error {
 	return nil
 }
 
-func (t *Templating) parseStringAsTemplate(name, text, startDel, endDel string) (string, error) {
-	tpl, err := template.New(name).
-		Delims(startDel, endDel).
-		Funcs(t.templateFuncMap).
-		Parse(text)
-
-	if err != nil {
-		return "", errors.Wrap(err, "parse template as string")
-	}
-
-	var buf bytes.Buffer
-	err = tpl.Execute(&buf, t.TemplateData)
-	if err != nil {
-		return "", errors.Wrap(err, "execute template as string")
-	}
-
-	return buf.String(), err
-}
-
-func (t *Templating) parseStringAsTemplateCondition(name, text, startDel, endDel string) (bool, error) {
-	tpl, err := template.New(name).
-		Delims(startDel, endDel).
-		Funcs(t.templateFuncMap).
-		Parse("{if " + text + "}true{end}")
-
-	if err != nil {
-		return false, errors.Wrap(err, "parse template as condition")
-	}
-
-	var buf bytes.Buffer
-	err = tpl.Execute(&buf, t.TemplateData)
-	if err != nil {
-		return false, errors.Wrap(err, "execute template as condition")
-	}
-
-	return buf.String() == "true", err
-}
-
 // runSurveyTemplateHooks run all template hooks
 func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 	for i, hook := range t.templateConfig.AfterHooks {
@@ -473,7 +435,7 @@ func (t *Templating) runSurveyTemplateHooks(cmdDir string) error {
 		})
 
 		if strings.TrimSpace(hook.Enabled) != "" {
-			dat, err := t.parseStringAsTemplateCondition(hook.Cmd, hook.Enabled, startNameDelim, endNameDelim)
+			dat, err := parseStringAsTemplateCondition(t.TemplateData, t.templateFuncMap, hook.Cmd, hook.Enabled)
 			if err != nil {
 				return errors.Wrap(err, "parse hook template")
 			}
@@ -519,7 +481,7 @@ func (t *Templating) parseSurveyTemplateVariables() error {
 			if strings.TrimSpace(varString) == "" {
 				return nil
 			}
-			dat, err := t.parseStringAsTemplate(k, varString, startNameDelim, endNameDelim)
+			dat, err := parseStringAsTemplate(t.TemplateData, t.templateFuncMap, k, varString)
 			if err != nil {
 				return errors.Wrap(err, "parse variable template")
 			}
@@ -580,7 +542,7 @@ func (t *Templating) walkDirectories(path string, info os.FileInfo, err error) e
 	}
 
 	// Template directory
-	newDirectory, err := t.parseStringAsTemplate(path, info.Name(), startNameDelim, endNameDelim)
+	newDirectory, err := parseStringAsTemplate(t.TemplateData, t.templateFuncMap, path, info.Name())
 	if err != nil {
 		return errors.Wrap(err, "parse template for directory")
 	}
@@ -640,7 +602,7 @@ func (t *Templating) walkFiles(path string, info os.FileInfo, err error) error {
 // templater is responsible to parse files, rename or delete files and write the output back to the file.
 // t.TemplateData and t.templateFuncMap are read-only
 func (t *Templating) templater(path, filename string, ctx *logy.Entry) error {
-	newFilename, err := t.parseStringAsTemplate(path, filename, startNameDelim, endNameDelim)
+	newFilename, err := parseStringAsTemplate(t.TemplateData, t.templateFuncMap, path, filename)
 	if err != nil {
 		return errors.Wrap(err, "parse variable template")
 	}
@@ -1012,6 +974,44 @@ func (t *Templating) stop() {
 	close(t.ch)
 	t.wg.Wait()
 	close(t.chErr)
+}
+
+func parseStringAsTemplate(templateData *TemplateData, funcMap template.FuncMap, name, text string) (string, error) {
+	tpl, err := template.New(name).
+		Delims(startNameDelim, endNameDelim).
+		Funcs(funcMap).
+		Parse(text)
+
+	if err != nil {
+		return "", errors.Wrap(err, "parse template as string")
+	}
+
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, templateData)
+	if err != nil {
+		return "", errors.Wrap(err, "execute template as string")
+	}
+
+	return buf.String(), err
+}
+
+func parseStringAsTemplateCondition(templateData *TemplateData, funcMap template.FuncMap, name, text string) (bool, error) {
+	tpl, err := template.New(name).
+		Delims(startNameDelim, endNameDelim).
+		Funcs(funcMap).
+		Parse("{if " + text + "}true{end}")
+
+	if err != nil {
+		return false, errors.Wrap(err, "parse template as condition")
+	}
+
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, templateData)
+	if err != nil {
+		return false, errors.Wrap(err, "execute template as condition")
+	}
+
+	return buf.String() == "true", err
 }
 
 // defaultSpinner create a spinner with good default settings
