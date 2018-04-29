@@ -119,7 +119,7 @@ func ParseConfig(filename string) *Config {
 		localCfg, err := ParseConfigFile(filename)
 
 		if err != nil {
-			ctx.Warnf("couldn't load config from,  see %s", err.Error())
+			ctx.Warnf("couldn't load config from, see %s", err.Error())
 		} else {
 			cfg = mergeConfigs(cfg, localCfg)
 		}
