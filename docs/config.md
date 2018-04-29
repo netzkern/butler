@@ -28,8 +28,8 @@ You can define custom variables to use them inside project templates. Custom tem
 
 Butler searches for three different places for a `butler.yml` file.
 
-* From your user space `~/.butler/.butler.yml`
-* From your current working directory `.butler.yml`
+* From your user space `~/.butler/butler.yml`
+* From your current working directory `butler.yml`
 * From the `BUTLER_CONFIG_URL` environment variable (Support also local paths)
 
 The order above displays the merge order.

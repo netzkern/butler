@@ -1,11 +1,11 @@
 package config
 
 import (
-	"path"
-	"os"
-	"os/user"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"os/user"
+	"path"
 
 	logy "github.com/apex/log"
 	"github.com/kelseyhightower/envconfig"
@@ -42,8 +42,6 @@ type (
 		Confluence           Confluence             `json:"confluence"`
 	}
 )
-
-const userConfigName = ".butler.yml"
 
 // downloadConfig download the full file from web
 func downloadConfig(path string) ([]byte, error) {
@@ -95,12 +93,13 @@ func ParseConfig(filename string) *Config {
 
 	var homeCfg *Config
 
+	// find user config
 	if usr != nil {
-		homePath := path.Join(usr.HomeDir, userConfigName)
+		homePath := path.Join(usr.HomeDir, filename)
 
 		if _, err = os.Stat(homePath); !os.IsNotExist(err) {
 			homeCtx := logy.WithFields(logy.Fields{
-			"config": homePath,
+				"config": homePath,
 			})
 
 			homeCfg, err = ParseConfigFile(homePath)
@@ -115,6 +114,7 @@ func ParseConfig(filename string) *Config {
 		}
 	}
 
+	// find local config
 	if _, err = os.Stat(filename); !os.IsNotExist(err) {
 		localCfg, err := ParseConfigFile(filename)
 
@@ -124,14 +124,14 @@ func ParseConfig(filename string) *Config {
 			cfg = mergeConfigs(cfg, localCfg)
 		}
 	}
-	
+
 	err = envconfig.Process("butler", cfg)
 
 	if err != nil {
 		ctx.Fatalf("could not inject env variables %s", err.Error())
 	}
 
-	// check for external configUrl in env
+	// find config in ENV
 	if cfg.ConfigURL != "" {
 		cfgExt := &Config{
 			Templates: []Template{},
